@@ -4,64 +4,84 @@ import { useState, useEffect, useMemo, createContext, useContext } from "react";
 // DESIGN SYSTEM — Elonga
 // ═══════════════════════════════════════════════════
 const LIGHT = {
-  bg: "#F5F6FA", card: "#FFFFFF", cardAlt: "#ECEEF5",
-  text: "#1A1B2E", textSec: "#8B8DA3", textTer: "#A9ADC1",
-  primary: "#3D3BF3", primarySoft: "#ECEEFF", primaryMuted: "#6E6CF7",
-  pink: "#E8467C", pinkSoft: "#FFF0F4",
-  green: "#22B573", greenSoft: "#EAFAF2",
-  orange: "#F5A623", orangeSoft: "#FFF8EC",
-  red: "#FF4757", redSoft: "#FFF0F2",
-  gradStart: "#3D3BF3", gradEnd: "#7B6CFF",
-  border: "#ECEEF5", borderStrong: "#D8DBE8",
-  shadow: "0 2px 12px rgba(26,29,46,0.07)",
-  shadowLg: "0 8px 30px rgba(26,29,46,0.10)",
+  bg: "#F2F3F8", card: "#FFFFFF", cardAlt: "#EBEDF3",
+  text: "#1E1E4F", textSec: "#475484", textTer: "#7B85A8",
+  primary: "#4052F4", primarySoft: "#ECEEFE", primaryMuted: "#7A88F8",
+  purple: "#733BE8", purpleSoft: "#F2EBFD",
+  pink: "#E83A64", pinkSoft: "#FDECF1",
+  green: "#3B7A5E", greenSoft: "#EAF4EF",
+  gray: "#475484", graySoft: "#EBEDF3",
+  red: "#E83A64", redSoft: "#FDECF1",
+  gradStart: "#1E3080", gradEnd: "#4052F4",
+  border: "#EBEDF3", borderStrong: "#D7DAE6",
+  shadow: "0 2px 12px rgba(30,30,79,0.07)",
+  shadowLg: "0 8px 30px rgba(30,30,79,0.10)",
   r: 20, rSm: 14, rXs: 10,
   f: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif",
-  toggleBg: "#E8E9F2",
+  toggleBg: "#EBEDF3",
 };
 const DARK = {
-  bg: "#13141F", card: "#1E1F2E", cardAlt: "#282940",
-  text: "#FFFFFF", textSec: "#9B9DB8", textTer: "#6B6D82",
-  primary: "#4946FF", primarySoft: "#2A2B50", primaryMuted: "#7B79FF",
-  pink: "#FF6B8A", pinkSoft: "#3A1F2A",
-  green: "#34D399", greenSoft: "#1A3A2A",
-  orange: "#FBBF24", orangeSoft: "#3A3020",
-  red: "#FF6B6B", redSoft: "#3A1F1F",
-  gradStart: "#4946FF", gradEnd: "#8B7CFF",
-  border: "#2A2B40", borderStrong: "#3A3B55",
+  bg: "#0D0F1A", card: "#1E1E4F", cardAlt: "#282A52",
+  text: "#FFFFFF", textSec: "#AFB5CC", textTer: "#7B85A8",
+  primary: "#4052F4", primarySoft: "#1A2058", primaryMuted: "#7A88F8",
+  purple: "#9E75F0", purpleSoft: "#2A1858",
+  pink: "#F07A98", pinkSoft: "#3A1830",
+  green: "#72A790", greenSoft: "#1A3028",
+  gray: "#7B85A8", graySoft: "#282A52",
+  red: "#F07A98", redSoft: "#3A1830",
+  gradStart: "#2840D0", gradEnd: "#5060FF",
+  border: "#282A52", borderStrong: "#383A60",
   shadow: "0 2px 12px rgba(0,0,0,0.25)",
   shadowLg: "0 8px 30px rgba(0,0,0,0.35)",
   r: 20, rSm: 14, rXs: 10,
   f: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif",
-  toggleBg: "#3A3B55",
+  toggleBg: "#383A60",
 };
 
 const ThemeCtx = createContext(LIGHT);
 const useTheme = () => useContext(ThemeCtx);
 
 const PILLARS = [
-  { key: "pohyb", label: "Pohyb", icon: "🏃", maxMin: 150, color: "#3D3BF3", soft: "#ECEEFF", darkSoft: "#2A2B50" },
-  { key: "spanek", label: "Spánek", icon: "🌙", maxMin: 60, color: "#7B6CFF", soft: "#F0F1FF", darkSoft: "#2D2B50" },
-  { key: "strava", label: "Strava", icon: "🥗", maxMin: 60, color: "#F5A623", soft: "#FFF8EC", darkSoft: "#3A3020" },
-  { key: "stres", label: "Stres", icon: "🧘", maxMin: 30, color: "#22B573", soft: "#EAFAF2", darkSoft: "#1A3A2A" },
-  { key: "vztahy", label: "Vztahy", icon: "❤️", maxMin: 30, color: "#E8467C", soft: "#FFF0F4", darkSoft: "#3A1F2A" },
-  { key: "monitoring", label: "Monitoring", icon: "📊", maxMin: 30, color: "#9B8FFF", soft: "#F3F1FF", darkSoft: "#2D2A50" },
+  { key: "pohyb", label: "Pohyb", icon: "🏃", maxMin: 150, color: "#4052F4", soft: "#ECEEFE", darkSoft: "#1A2058" },
+  { key: "spanek", label: "Spánek", icon: "🌙", maxMin: 60, color: "#733BE8", soft: "#F2EBFD", darkSoft: "#2A1858" },
+  { key: "strava", label: "Strava", icon: "🥗", maxMin: 60, color: "#3B7A5E", soft: "#EAF4EF", darkSoft: "#1A3028" },
+  { key: "stres", label: "Stres", icon: "🧘", maxMin: 30, color: "#475484", soft: "#EBEDF3", darkSoft: "#282A52" },
+  { key: "vztahy", label: "Vztahy", icon: "❤️", maxMin: 30, color: "#E83A64", soft: "#FDECF1", darkSoft: "#3A1830" },
+  { key: "monitoring", label: "Monitoring", icon: "📊", maxMin: 30, color: "#7B85A8", soft: "#EBEDF3", darkSoft: "#282A52" },
 ];
 
 const HRV_STATES = [
-  { label: "Pod průměrem", color: "#FF4757", bg: "#FFF0F2", darkBg: "#3A1F1F", mult: 1.0, tag: "Stabilizace" },
-  { label: "V normě", color: "#22B573", bg: "#EAFAF2", darkBg: "#1A3A2A", mult: 1.1, tag: "+10 %" },
-  { label: "Nadprůměr", color: "#F5A623", bg: "#FFF8EC", darkBg: "#3A3020", mult: 1.25, tag: "+25 %" },
+  { label: "Pod průměrem", color: "#E83A64", bg: "#FDECF1", darkBg: "#3A1830", mult: 1.0, tag: "Stabilizace" },
+  { label: "V normě", color: "#3B7A5E", bg: "#EAF4EF", darkBg: "#1A3028", mult: 1.1, tag: "+10 %" },
+  { label: "Nadprůměr", color: "#733BE8", bg: "#F2EBFD", darkBg: "#2A1858", mult: 1.25, tag: "+25 %" },
 ];
 
 const DEMO = { pohyb: 0.72, spanek: 0.85, strava: 0.55, stres: 0.05, vztahy: 0.65, monitoring: 1.0 };
 
 const PILLAR_META = {
-  pohyb: { desc: "Fyzická aktivita, kroky, tréninky", source: "Apple Health / Google Fit + manuálně", question: "Jak chceš zadávat pohyb?", options: ["Synchronizace s Apple Health / Google Fit", "Budu zadávat ručně"] },
-  spanek: { desc: "Kvalita a délka spánku", source: "Zdravý návyk (self-report)", question: "Čeho chceš dosáhnout?", options: ["Chci spát určitý počet hodin denně", "Chci chodit spát ve stejný čas", "Chci eliminovat modré světlo před spaním"] },
-  strava: { desc: "Výživa, stravovací návyky", source: "Zdravý návyk (self-report)", question: "Čeho chceš dosáhnout?", options: ["Chci jíst pravidelněji", "Chci snížit příjem cukru", "Chci držet intermittent fasting"] },
-  stres: { desc: "Dechová cvičení, meditace, relaxace", source: "Zdravý návyk (self-report)", question: "Čeho chceš dosáhnout?", options: ["Chci se naučit dýchací techniky", "Chci pravidelně meditovat", "Chci lépe zvládat stresové situace"] },
-  vztahy: { desc: "Sociální interakce, kvalitní čas s blízkými", source: "Zdravý návyk (self-report)", question: "Čeho chceš dosáhnout?", options: ["Chci trávit víc kvalitního času s blízkými", "Chci být víc v kontaktu s přáteli"] },
+  pohyb: { desc: "Fyzická aktivita, kroky, tréninky", source: "Apple Health / Google Fit + manuálně", question: "Jak chceš zadávat pohyb?", options: [
+    { label: "Synchronizace s Apple Health / Google Fit", desc: "Automaticky přenese kroky, tréninky a aktivitu" },
+    { label: "Budu zadávat ručně", desc: "Záznam aktivit ručně po každém cvičení" },
+  ]},
+  spanek: { desc: "Kvalita a délka spánku", source: "Zdravý návyk (self-report)", question: "Čeho chceš dosáhnout?", options: [
+    { label: "Chci spát určitý počet hodin denně", desc: "Nastavím si cílovou délku spánku" },
+    { label: "Chci chodit spát ve stejný čas", desc: "Pravidelný rytmus usínání" },
+    { label: "Chci eliminovat modré světlo před spaním", desc: "Omezit obrazovky 1h před spaním" },
+  ]},
+  strava: { desc: "Výživa, stravovací návyky", source: "Zdravý návyk (self-report)", question: "Čeho chceš dosáhnout?", multiSelect: true, options: [
+    { label: "Chci se naučit lepší stravovací návyky", desc: "Tipy a doporučení pro zdravější jídelníček" },
+    { label: "Chci zhubnout", desc: "Zdravé hubnutí a sledování pokroku" },
+    { label: "Chci mít pravidelný stravovací režim", desc: "Dodržovat pravidelné časy jídel" },
+  ]},
+  stres: { desc: "Dechová cvičení, meditace, relaxace", source: "Zdravý návyk (self-report)", question: "Čeho chceš dosáhnout?", options: [
+    { label: "Chci se naučit dýchací techniky", desc: "Jednoduché techniky pro zklidnění" },
+    { label: "Chci pravidelně meditovat", desc: "Denní meditační návyk" },
+    { label: "Chci lépe zvládat stresové situace", desc: "Nástroje pro zvládání stresu v reálném čase" },
+  ]},
+  vztahy: { desc: "Sociální interakce, kvalitní čas s blízkými", source: "Zdravý návyk (self-report)", question: "Čeho chceš dosáhnout?", options: [
+    { label: "Chci trávit víc kvalitního času s blízkými", desc: "Vědomě plánovat čas s rodinou a přáteli" },
+    { label: "Chci být víc v kontaktu s přáteli", desc: "Pravidelně se ozývat a udržovat vztahy" },
+  ]},
 };
 
 function generateHistory(days) {
@@ -104,27 +124,33 @@ function usePillarSoft(p) {
 function DarkModeToggle({ dark, onToggle }) {
   const T = useTheme();
   return (
-    <button onClick={onToggle} style={{
-      width: 44, height: 44, borderRadius: 22, border: "none", cursor: "pointer",
-      background: dark ? "#2A2B45" : T.card,
-      boxShadow: dark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 8px rgba(26,29,46,0.08)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      transition: "all 0.3s ease",
+    <div onClick={onToggle} style={{
+      width: 50, height: 28, borderRadius: 14, padding: 2, cursor: "pointer",
+      background: dark ? "#282A52" : "#EBEDF3",
+      transition: "background 0.3s ease", position: "relative",
     }}>
-      {dark ? (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="5" fill="#FBBF24"/>
-          {[0,45,90,135,180,225,270,315].map(a => (
-            <line key={a} x1="12" y1="2" x2="12" y2="5" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round"
-              transform={`rotate(${a} 12 12)`}/>
-          ))}
-        </svg>
-      ) : (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="#6B6D82"/>
-        </svg>
-      )}
-    </button>
+      <div style={{
+        width: 24, height: 24, borderRadius: 12, background: "white",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+        transform: dark ? "translateX(22px)" : "translateX(0)",
+        transition: "transform 0.3s ease",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        {dark ? (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="5" fill="#E83A64"/>
+            {[0,90,180,270].map(a => (
+              <line key={a} x1="12" y1="3" x2="12" y2="5" stroke="#E83A64" strokeWidth="2" strokeLinecap="round"
+                transform={`rotate(${a} 12 12)`}/>
+            ))}
+          </svg>
+        ) : (
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="#7B85A8"/>
+          </svg>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -162,13 +188,13 @@ function RadarChart({ data, pillars, animate }) {
 // ═══════════════════════════════════════════════════
 // GAUGE GRID
 // ═══════════════════════════════════════════════════
-function GaugeGrid({ data, pillars, animate }) {
+function GaugeGrid({ data, pillars, animate, periodDays=1 }) {
   const T = useTheme();
   const cols = pillars.length <= 2 ? pillars.length : pillars.length <= 4 ? 2 : 3;
   return (
     <div style={{display:"grid",gridTemplateColumns:`repeat(${cols}, 1fr)`,gap:8,padding:"4px 0",justifyItems:"center"}}>
       {pillars.map((p,idx)=>{
-        const val=data[p.key]||0;const hly=((p.maxMin*val)/60).toFixed(1);
+        const val=data[p.key]||0;const hly=((p.maxMin*val*periodDays)/60).toFixed(1);
         const r=36;const sw=7;const circ=Math.PI*r;const filled=circ*val;
         return (
           <div key={p.key} style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"6px 0"}}>
@@ -201,73 +227,201 @@ function GaugeGrid({ data, pillars, animate }) {
 }
 
 // ═══════════════════════════════════════════════════
-// BAR CHART
+// ACTIVITY RINGS (Apple Watch style)
 // ═══════════════════════════════════════════════════
-function BarChart({ history, period, animate }) {
+function ActivityRings({ data, pillars, animate, periodTotal }) {
   const T = useTheme();
-  const items = period==="week"?history.slice(-7):history.slice(-30);
-  const maxH=6; const barW=period==="week"?32:8; const gap=period==="week"?8:3;
-  const chartW=items.length*(barW+gap)-gap; const chartH=120;
+  const isDark = T === DARK;
+  const n=pillars.length;
+  const sw=7;const ringGap=2;
+  const step=sw+ringGap;
+  const totalRingSpace=n*sw+(n-1)*ringGap;
+  const outerR=totalRingSpace+20;
+  const size=(outerR+sw/2+4)*2;
+  const cx=size/2;const cy=size/2;
   return (
-    <div style={{overflowX:period==="month"?"auto":"hidden",padding:"0 4px"}}>
-      <svg width={Math.max(chartW,300)} height={chartH+28} viewBox={`0 0 ${Math.max(chartW,300)} ${chartH+28}`}>
-        <defs><linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={T.gradStart}/><stop offset="100%" stopColor={T.gradEnd} stopOpacity="0.6"/></linearGradient></defs>
-        {[0,2,4,6].map(v=>{const y=chartH-(v/maxH)*chartH;return(<g key={v}><line x1="0" y1={y} x2={Math.max(chartW,300)} y2={y} stroke={T.border} strokeWidth="0.5" strokeDasharray="4 4"/>{v>0&&<text x={Math.max(chartW,300)-2} y={y-3} textAnchor="end" fill={T.textTer} fontSize="9" fontFamily={T.f}>{v}h</text>}</g>);})}
-        {items.map((item,i)=>{const h=(item.hrsBoosted/maxH)*chartH;const x=i*(barW+gap);const isToday=i===items.length-1;
-          return(<g key={i}>
-            <rect x={x} y={animate?chartH-h:chartH} width={barW} height={animate?h:0} rx={barW>10?6:3}
-              fill={isToday?"url(#barGrad)":T.borderStrong} style={{transition:`all 0.6s cubic-bezier(0.34,1.56,0.64,1)`,transitionDelay:`${i*25}ms`}}/>
-            {barW>10&&<circle cx={x+barW/2} cy={animate?chartH-h-6:chartH-6} r="3" fill={HRV_STATES[item.hrvIdx].color}
-              style={{transition:"all 0.6s ease",transitionDelay:`${i*25+200}ms`}}/>}
-            <text x={x+barW/2} y={chartH+14} textAnchor="middle" fill={isToday?T.text:T.textTer}
-              fontSize={period==="week"?"10":"8"} fontWeight={isToday?"700":"400"} fontFamily={T.f}>
-              {period==="week"?item.day:(i%5===0||isToday?item.dayNum:"")}
-            </text>
-          </g>);
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"4px 0"}}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {pillars.map((p,idx)=>{
+          const val=Math.min(data[p.key]||0,1);
+          const r=outerR-(idx*step);
+          const circ=2*Math.PI*r;
+          const filled=circ*val;
+          return (
+            <g key={p.key}>
+              <circle cx={cx} cy={cy} r={r} fill="none"
+                stroke={isDark?(p.darkSoft||p.soft):p.soft} strokeWidth={sw}/>
+              <circle cx={cx} cy={cy} r={r} fill="none"
+                stroke={p.color} strokeWidth={sw} strokeLinecap="round"
+                strokeDasharray={circ}
+                strokeDashoffset={animate?circ-filled:circ}
+                transform={`rotate(-90 ${cx} ${cy})`}
+                style={{
+                  transition:`stroke-dashoffset 1.2s cubic-bezier(0.34,1.56,0.64,1)`,
+                  transitionDelay:`${idx*100}ms`,
+                }}/>
+            </g>
+          );
         })}
+        {/* Center value */}
+        <text x={cx} y={cy-2} textAnchor="middle" dominantBaseline="central"
+          fill={T.text} fontSize="22" fontWeight="800" fontFamily={T.f}>
+          {periodTotal.hrs}
+        </text>
+        <text x={cx} y={cy+16} textAnchor="middle" dominantBaseline="central"
+          fill={T.textSec} fontSize="9" fontWeight="500" fontFamily={T.f}>
+          {periodTotal.label}
+        </text>
       </svg>
+      <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center",marginTop:4}}>
+        {pillars.map(p=>{
+          const pct=Math.round((data[p.key]||0)*100);
+          return (
+            <div key={p.key} style={{display:"flex",alignItems:"center",gap:3}}>
+              <div style={{width:7,height:7,borderRadius:4,background:p.color}}/>
+              <span style={{fontSize:10,fontWeight:600,color:T.textSec,fontFamily:T.f}}>{p.label}</span>
+              <span style={{fontSize:10,fontWeight:700,color:p.color,fontFamily:T.f}}>{pct}%</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
 // ═══════════════════════════════════════════════════
-// CUMULATIVE TREND
+// BAR CHART
 // ═══════════════════════════════════════════════════
-function CumulativeTrend({ history, period, animate }) {
+function aggregateByWeek(history) {
+  const weeks = [];
+  const all = [...history];
+  while (all.length > 0) {
+    const chunk = all.splice(-7);
+    const total = chunk.reduce((s, d) => s + d.hrsBoosted, 0);
+    const avg = total / chunk.length;
+    const last = chunk[chunk.length - 1];
+    const first = chunk[0];
+    const avgHrv = Math.round(chunk.reduce((s, d) => s + d.hrvIdx, 0) / chunk.length);
+    weeks.unshift({ avg, total, label: `${first.dayNum}.–${last.dayNum}.`, date: last.date, count: chunk.length, hrvIdx: avgHrv });
+  }
+  return weeks.slice(-12);
+}
+function aggregateByMonth(history) {
+  const months = {};
+  history.forEach(d => {
+    const key = `${d.date.getFullYear()}-${d.date.getMonth()}`;
+    if (!months[key]) months[key] = { items: [], date: d.date };
+    months[key].items.push(d);
+  });
+  return Object.values(months).map(m => {
+    const total = m.items.reduce((s, d) => s + d.hrsBoosted, 0);
+    return {
+    avg: total / m.items.length,
+    total,
+    label: m.date.toLocaleDateString("cs-CZ", { month: "short" }),
+    date: m.date,
+    count: m.items.length,
+    hrvIdx: Math.round(m.items.reduce((s, d) => s + d.hrvIdx, 0) / m.items.length),
+  }}).slice(-12);
+}
+
+function BarChartCard({ history, animate }) {
   const T = useTheme();
-  const items=period==="week"?history.slice(-7):history.slice(-30);
-  const chartW=320,chartH=80;
-  let cumHrs=0;
-  const points=items.map(item=>{cumHrs+=item.hrsBoosted;return cumHrs;});
-  const maxCum=points[points.length-1]||1;
-  const cumDays=(maxCum/24).toFixed(1);
-  const pathD=points.map((v,i)=>{const x=(i/(points.length-1))*chartW;const y=chartH-(v/maxCum)*(chartH-10);return`${i===0?"M":"L"} ${x} ${y}`;}).join(" ");
-  const areaD=pathD+` L ${chartW} ${chartH} L 0 ${chartH} Z`;
+  const [barPeriod, setBarPeriod] = useState("day");
+  const [selected, setSelected] = useState(null);
+
+  const dayItems = history.slice(-30);
+  const weekItems = useMemo(() => aggregateByWeek(history), [history]);
+  const monthItems = useMemo(() => aggregateByMonth(history), [history]);
+
+  const items = barPeriod === "day" ? dayItems : barPeriod === "week" ? weekItems : monthItems;
+  const sel = selected === null || selected >= items.length ? items.length - 1 : selected;
+  const maxH = 6; const chartH = 120;
+  const barW = barPeriod === "day" ? 24 : barPeriod === "week" ? 36 : 36;
+  const gap = barPeriod === "day" ? 4 : 8;
+
+  const getBarVal = (item) => barPeriod === "day" ? item.hrsBoosted : item.avg;
+  const getLabel = (item) => barPeriod === "day" ? item.day : item.label;
+  const getTooltipVal = (item) => {
+    if (barPeriod === "day") return `${item.hrsBoosted.toFixed(1)}h`;
+    const days = (item.total / 24).toFixed(1);
+    return `${item.total.toFixed(0)}h (${days} dní)`;
+  };
+  const getTooltipLabel = (item) => {
+    if (barPeriod === "day") return item.date.toLocaleDateString("cs-CZ", { day: "numeric", month: "short" });
+    if (barPeriod === "week") return item.label;
+    return item.label + " " + item.date.getFullYear();
+  };
+
   return (
-    <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:8}}>
-        <span style={{fontSize:13,fontWeight:600,color:T.text,fontFamily:T.f}}>Kumulativní HLY</span>
-        <span style={{fontSize:20,fontWeight:800,color:T.primary,fontFamily:T.f}}>{cumDays} <span style={{fontSize:12,fontWeight:500,color:T.textSec}}>dní</span></span>
+    <div style={{background:T.card,borderRadius:T.r,padding:"16px",boxShadow:T.shadow}}>
+      <style>{`
+        .bar-scroll::-webkit-scrollbar { height: 6px; }
+        .bar-scroll::-webkit-scrollbar-track { background: ${T.border}; border-radius: 3px; }
+        .bar-scroll::-webkit-scrollbar-thumb { background: ${T.borderStrong}; border-radius: 3px; }
+      `}</style>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <div style={{width:6,height:6,borderRadius:3,background:T.primary}}/>
+          <span style={{fontSize:13,fontWeight:700,color:T.text,fontFamily:T.f}}>Zdraví</span>
+        </div>
+        <div style={{display:"flex",background:T.cardAlt,borderRadius:8,padding:2}}>
+          {["day","week","month"].map(p=>(
+            <button key={p} onClick={()=>{setBarPeriod(p);setSelected(null);}} style={{
+              padding:"4px 10px",borderRadius:6,border:"none",cursor:"pointer",
+              background:barPeriod===p?T.primary:"transparent",
+              color:barPeriod===p?"white":T.textTer,
+              fontSize:11,fontWeight:600,fontFamily:T.f,transition:"all 0.2s ease",
+            }}>{{day:"Den",week:"Týden",month:"Měsíc"}[p]}</button>
+          ))}
+        </div>
       </div>
-      <svg width={chartW} height={chartH+20} viewBox={`0 0 ${chartW} ${chartH+20}`} style={{width:"100%"}}>
-        <defs>
-          <linearGradient id="cumFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={T.gradStart} stopOpacity="0.15"/><stop offset="100%" stopColor={T.gradEnd} stopOpacity="0.02"/></linearGradient>
-          <linearGradient id="cumLine" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor={T.gradStart}/><stop offset="100%" stopColor={T.gradEnd}/></linearGradient>
-        </defs>
-        <path d={areaD} fill="url(#cumFill)" style={{opacity:animate?1:0,transition:"opacity 1s ease"}}/>
-        <path d={pathD} fill="none" stroke="url(#cumLine)" strokeWidth="2.5" strokeLinecap="round"
-          strokeDasharray="1000" strokeDashoffset={animate?0:1000} style={{transition:"stroke-dashoffset 1.5s ease"}}/>
-        {points.length>0&&<circle cx={chartW} cy={chartH-(points[points.length-1]/maxCum)*(chartH-10)}
-          r="5" fill={T.card} stroke={T.gradEnd} strokeWidth="2.5"
-          style={{opacity:animate?1:0,transition:"opacity 0.5s ease",transitionDelay:"1.2s"}}/>}
-        {items.map((item,idx)=>{
-          if(period==="week"||(idx%7===0||idx===items.length-1)){
-            const x=(idx/(items.length-1))*chartW;
-            return <text key={idx} x={x} y={chartH+14} textAnchor="middle" fill={T.textTer} fontSize="9" fontFamily={T.f}>{period==="week"?item.day:`${item.dayNum}.`}</text>;
-          }
-          return null;
-        })}
-      </svg>
+      {/* Selected value tooltip — fixed height */}
+      <div style={{textAlign:"center",height:20,marginBottom:4}}>
+        {items[sel]&&<>
+          <span style={{fontSize:13,fontWeight:700,color:T.primary,fontFamily:T.f}}>
+            {getTooltipVal(items[sel])}
+          </span>
+          <span style={{fontSize:11,color:T.textSec,fontFamily:T.f,marginLeft:6}}>
+            {getTooltipLabel(items[sel])}
+          </span>
+        </>}
+      </div>
+      <div className="bar-scroll" style={{overflowX:"auto",WebkitOverflowScrolling:"touch",paddingBottom:4}}
+        ref={el=>{if(el&&barPeriod==="day")el.scrollLeft=el.scrollWidth;}}>
+        <div style={{display:"flex",alignItems:"flex-end",gap,minWidth:items.length*(barW+gap)-gap,height:chartH+28}}>
+          {items.map((item,i)=>{
+            const val=getBarVal(item);
+            const pct=Math.min(val/maxH,1);const h=pct*chartH;
+            const isSel=sel===i;
+            const isHighlighted=isSel;
+            return (
+              <div key={i} onClick={()=>setSelected(i)}
+                style={{display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer",width:barW,flexShrink:0}}>
+                {/* Bar + dot container */}
+                <div style={{width:"100%",height:chartH,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",position:"relative"}}>
+                  {/* HRV dot — positioned above bar */}
+                  <div style={{width:6,height:6,borderRadius:3,marginBottom:4,flexShrink:0,
+                    background:HRV_STATES[item.hrvIdx!=null?item.hrvIdx:1].color,
+                    opacity:animate?1:0,transition:"opacity 0.4s ease",transitionDelay:`${i*30+300}ms`}}/>
+                  <div style={{
+                    width:"100%",borderRadius:barPeriod==="day"?6:8,
+                    height:animate?Math.max(h,4):4,
+                    background:isHighlighted?`linear-gradient(180deg, ${T.gradStart}, ${T.gradEnd}cc)`:T.borderStrong,
+                    opacity:isHighlighted?1:0.6,
+                    transition:`all 0.5s cubic-bezier(0.34,1.56,0.64,1)`,transitionDelay:`${i*30}ms`,
+                  }}/>
+                </div>
+                {/* Label */}
+                <span style={{fontSize:barPeriod==="day"?8:10,fontWeight:isHighlighted?700:400,marginTop:4,
+                  color:isHighlighted?T.text:T.textTer,fontFamily:T.f,whiteSpace:"nowrap"}}>
+                  {getLabel(item)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -292,16 +446,14 @@ function PeriodSummary({ history, period, activePillars }) {
         <span style={{fontSize:14,fontWeight:700,color:T.text,fontFamily:T.f}}>{periodLabel}</span>
       </div>
       <div style={{textAlign:"center",marginBottom:16}}>
-        <div style={{fontSize:40,fontWeight:800,fontFamily:T.f,lineHeight:1.1,
-          background:`linear-gradient(135deg, ${T.gradStart}, ${T.gradEnd})`,
-          backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>+{totalDays}</div>
+        <div style={{fontSize:40,fontWeight:800,fontFamily:T.f,lineHeight:1.1,color:T.primary}}>+{totalDays}</div>
         <div style={{fontSize:13,color:T.textSec,fontFamily:T.f,marginTop:2}}>dní zdraví navíc</div>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
         {[
           {label:"Průměr/den",value:`${avgHrs}h`,color:T.primary,icon:"📊"},
           {label:"Nejlepší den",value:`${bestDay.hrsBoosted.toFixed(1)}h`,color:T.green,icon:"🏆"},
-          {label:"Streak",value:`${streakDays}d`,color:T.orange,icon:"🔥"},
+          {label:"Streak",value:`${streakDays}d`,color:T.purple,icon:"🔥"},
         ].map(s=>(
           <div key={s.label} style={{background:T.cardAlt,borderRadius:T.rXs,padding:"10px 8px",textAlign:"center"}}>
             <div style={{fontSize:14,marginBottom:4}}>{s.icon}</div>
@@ -330,12 +482,12 @@ function PeriodSummary({ history, period, activePillars }) {
 // NUDGE CARDS
 // ═══════════════════════════════════════════════════
 const NUDGE_MESSAGES = {
-  pohyb: { msg: "Pohyb je královský pilíř — 1 hodina aktivity ti přidá až 2.5h HLY.", cta: "Otevřít pohybový plán" },
-  spanek: { msg: "Kvalitní spánek ti může přidat celou hodinu HLY denně.", cta: "Nastavit spánkový návyk" },
-  strava: { msg: "Správná strava sníží záněty a přidá ti až 1h HLY denně.", cta: "Přidat stravovací návyk" },
-  stres: { msg: "Dechové cvičení + meditace = 0.5h HLY denně. Stačí 5 minut.", cta: "Vyzkoušet dechové cvičení" },
+  pohyb: { msg: "Pohyb je královský pilíř — 1 hodina aktivity ti přidá až 2.5h zdraví.", cta: "Otevřít pohybový plán" },
+  spanek: { msg: "Kvalitní spánek ti může přidat celou hodinu zdraví denně.", cta: "Nastavit spánkový návyk" },
+  strava: { msg: "Správná strava sníží záněty a přidá ti až 1h zdraví denně.", cta: "Přidat stravovací návyk" },
+  stres: { msg: "Dechové cvičení + meditace = 0.5h zdraví denně. Stačí 5 minut.", cta: "Vyzkoušet dechové cvičení" },
   vztahy: { msg: "Kvalitní vztahy jsou nejsilnější prediktor zdraví ve stáří.", cta: "Přidat sociální návyk" },
-  monitoring: { msg: "Ranní HRV měření ti přidá 0.5h HLY + odemkne bonus.", cta: "Změřit HRV" },
+  monitoring: { msg: "Ranní HRV měření ti přidá 0.5h zdraví + odemkne bonus.", cta: "Změřit HRV" },
 };
 
 function NudgeCards({ data, activePillars }) {
@@ -362,7 +514,7 @@ function NudgeCards({ data, activePillars }) {
                 display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>{p.icon}</div>
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontWeight:700,color:T.text,fontFamily:T.f}}>{p.label}</div>
-                <div style={{fontSize:11,color:p.color,fontWeight:600,fontFamily:T.f}}>+{potentialHrs}h HLY/den</div>
+                <div style={{fontSize:11,color:p.color,fontWeight:600,fontFamily:T.f}}>+{potentialHrs}h zdraví/den</div>
               </div>
             </div>
             <div style={{fontSize:12,color:T.textSec,lineHeight:1.5,fontFamily:T.f,marginBottom:10}}>{n.msg}</div>
@@ -429,7 +581,7 @@ function PillarPill({ pillar, value, onChange, celebrated, onCelebrate }) {
         </div>
         {justCompleted&&<div style={{fontSize:11,fontWeight:600,color:pillar.color,fontFamily:T.f,marginTop:4,
           animation:"slideUp 0.4s ease"}}>
-          🎉 {pillar.label} splněn! +{hly}h HLY dnes
+          🎉 {pillar.label} splněn! +{hly}h zdraví dnes
         </div>}
         <input type="range" min="0" max="100" value={pct} onChange={e=>{
           const newVal=Number(e.target.value)/100;
@@ -446,26 +598,35 @@ function PillarPill({ pillar, value, onChange, celebrated, onCelebrate }) {
 // ═══════════════════════════════════════════════════
 // THE GAP
 // ═══════════════════════════════════════════════════
-function TheGap({ data, hrvState, age, onAgeChange, animate, activePillars }) {
+function TheGap({ data, todayData, hrvState, age, onAgeChange, funcAge, onFuncAgeChange, animate, activePillars, history }) {
   const T = useTheme();
-  const totalMin=activePillars.reduce((s,p)=>s+p.maxMin*(data[p.key]||0),0);
+  const effectiveAge = funcAge != null ? funcAge : age;
+  // Today's hours — always from todayData, not period-dependent
+  const todayMin=activePillars.reduce((s,p)=>s+p.maxMin*(todayData[p.key]||0),0);
+  const todayHrs=(todayMin*HRV_STATES[hrvState].mult)/60;
+  // Projection uses todayData so it never changes with period filter
+  const totalMin=activePillars.reduce((s,p)=>s+p.maxMin*(todayData[p.key]||0),0);
   const boosted=totalMin*HRV_STATES[hrvState].mult;const dailyHrs=boosted/60;
-  const yearlyDays=(dailyHrs*365)/24;const remaining=Math.max(65-age,0);
+  const yearlyDays=(dailyHrs*365)/24;const remaining=Math.max(65-effectiveAge,0);
   const bonusYears=remaining>0?(yearlyDays*remaining)/365:0;const projected=65+bonusYears;
 
-  const maxMin=activePillars.reduce((s,p)=>s+p.maxMin,0);
-  const maxBoosted=maxMin*1.25;const maxDailyHrs=maxBoosted/60;
-  const maxYearlyDays=(maxDailyHrs*365)/24;
-  const maxBonusYears=remaining>0?(maxYearlyDays*remaining)/365:0;
-  const maxProjected=65+maxBonusYears;
+  // Potential = ALL pillars (not just active), no HRV boost — matches onboarding
+  const allPillarsMax=PILLARS.reduce((s,p)=>s+p.maxMin,0)/60;
+  const allYearlyDays=(allPillarsMax*365)/24;
+  const allBonusYears=remaining>0?(allYearlyDays*remaining)/365:0;
+  const maxProjected=65+allBonusYears;
+  const hasInactive=activePillars.filter(p=>p.key!=="monitoring").length<PILLARS.filter(p=>p.key!=="monitoring").length;
 
   const scaleMax=Math.max(82,Math.ceil(maxProjected)+2);
-  const toPct=yr=>Math.min(Math.max(((yr-age)/(scaleMax-age))*100,0),100);
+  const toPct=yr=>Math.min(Math.max(((yr-effectiveAge)/(scaleMax-effectiveAge))*100,0),100);
   const basePct=toPct(65);const projPct=toPct(Math.min(projected,scaleMax));
   const maxPct=toPct(Math.min(maxProjected,scaleMax));
-  const monthDays=Math.round(yearlyDays/12);
+  const monthItems=history?history.filter(d=>{const now=new Date();return d.date.getMonth()===now.getMonth()&&d.date.getFullYear()===now.getFullYear();}):[];
+  const monthTotalHrs=monthItems.reduce((s,d)=>s+d.hrsBoosted,0);
+  const monthDays=(monthTotalHrs/24).toFixed(1);
   const untappedYears=(maxProjected-projected).toFixed(1);
-  const markers=[];for(let y=Math.ceil(age/5)*5;y<=scaleMax;y+=5)if(y>age)markers.push(y);
+  const markers=[];for(let y=Math.ceil(effectiveAge/5)*5;y<=scaleMax;y+=5)if(y>effectiveAge)markers.push(y);
+  const ageDiff = age - effectiveAge;
   return (
     <div style={{background:T.card,borderRadius:T.r,padding:"20px 16px 16px",boxShadow:T.shadow}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
@@ -474,13 +635,12 @@ function TheGap({ data, hrvState, age, onAgeChange, animate, activePillars }) {
         <span style={{marginLeft:"auto",fontSize:13,color:T.textTer}}>›</span>
       </div>
       <div style={{textAlign:"center",marginBottom:18}}>
-        <div style={{fontSize:42,fontWeight:800,fontFamily:T.f,lineHeight:1.1,
-          background:`linear-gradient(135deg, ${T.gradStart}, ${T.gradEnd})`,backgroundClip:"text",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",color:"transparent"}}>{projected.toFixed(1)}</div>
+        <div style={{fontSize:42,fontWeight:800,fontFamily:T.f,lineHeight:1.1,color:T.primary}}>{projected.toFixed(1)}</div>
         <div style={{fontSize:13,color:T.textSec,fontFamily:T.f,marginTop:3}}>let ve zdraví</div>
       </div>
 
-      {/* Potential bar */}
-      <div style={{marginBottom:6}}>
+      {/* Potential bar — only when not all pillars active */}
+      {hasInactive && <div style={{marginBottom:6}}>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
           <div style={{width:8,height:8,borderRadius:4,border:`2px dashed ${T.gradStart}88`,background:"transparent"}}/>
           <span style={{fontSize:11,color:T.textTer,fontWeight:500,fontFamily:T.f,fontStyle:"italic"}}>Tvůj potenciál</span>
@@ -492,13 +652,13 @@ function TheGap({ data, hrvState, age, onAgeChange, animate, activePillars }) {
             background:`repeating-linear-gradient(90deg, ${T.gradStart}20 0px, ${T.gradStart}20 4px, transparent 4px, transparent 8px)`,
             transition:"width 1.8s cubic-bezier(0.34,1.56,0.64,1)",transitionDelay:"0.6s"}}/>
         </div>
-      </div>
+      </div>}
 
       {/* Your path bar */}
       <div style={{marginBottom:6}}>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
           <div style={{width:8,height:8,borderRadius:4,background:`linear-gradient(135deg, ${T.gradStart}, ${T.gradEnd})`}}/>
-          <span style={{fontSize:11,color:T.text,fontWeight:600,fontFamily:T.f}}>Tvá cesta</span>
+          <span style={{fontSize:11,color:T.text,fontWeight:600,fontFamily:T.f}}>{hasInactive ? "Tvá cesta" : "Tvůj potenciál"}</span>
           <span style={{fontSize:10,color:T.textTer,fontFamily:T.f,marginLeft:"auto"}}>{projected.toFixed(1)} let</span>
         </div>
         <div style={{position:"relative",height:26,borderRadius:13,background:T.cardAlt,overflow:"hidden"}}>
@@ -535,24 +695,41 @@ function TheGap({ data, hrvState, age, onAgeChange, animate, activePillars }) {
       </div>
 
       {onAgeChange && (
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,padding:"8px 0"}}>
-          <span style={{fontSize:11,color:T.textTer,fontWeight:600,textTransform:"uppercase",letterSpacing:0.5}}>Věk</span>
-          <input type="range" min="20" max="70" value={age} onChange={e=>onAgeChange(Number(e.target.value))}
-            style={{flex:1,height:18}}/>
-          <span style={{fontSize:16,fontWeight:700,color:T.text,width:28,textAlign:"right",fontFamily:T.f}}>{age}</span>
+        <div style={{marginBottom:14}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0"}}>
+            <span style={{fontSize:11,color:T.textTer,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,width:24}}>KV</span>
+            <input type="range" className="age-slider" min="20" max="70" value={age} onChange={e=>onAgeChange(Number(e.target.value))}
+              style={{flex:1,height:18}}/>
+            <span style={{fontSize:16,fontWeight:700,color:T.text,width:28,textAlign:"right",fontFamily:T.f}}>{age}</span>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0"}}>
+            <span style={{fontSize:11,color:T.green,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,width:24}}>FV</span>
+            <input type="range" className="age-slider" min="20" max="70" value={effectiveAge} onChange={e=>onFuncAgeChange(Number(e.target.value))}
+              style={{flex:1,height:18}}/>
+            <span style={{fontSize:16,fontWeight:700,color:T.green,width:28,textAlign:"right",fontFamily:T.f}}>{effectiveAge}</span>
+          </div>
+          {ageDiff > 0 && (
+            <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",
+              background:T.greenSoft,borderRadius:T.rXs,marginTop:4}}>
+              <span style={{fontSize:13}}>💪</span>
+              <span style={{fontSize:12,color:T.green,fontWeight:600,fontFamily:T.f}}>
+                Tvé tělo je o {ageDiff} {ageDiff === 1 ? "rok" : ageDiff < 5 ? "roky" : "let"} mladší než KV
+              </span>
+            </div>
+          )}
         </div>
       )}
 
       <div style={{background:`linear-gradient(135deg, ${T.gradStart}0D, ${T.gradEnd}08)`,borderRadius:T.rSm,padding:"12px 14px",border:`1px solid ${T.border}`}}>
         <div style={{fontSize:13,color:T.text,lineHeight:1.6,fontFamily:T.f}}>
-          Dnes si své HLY prodloužil o <span style={{fontWeight:700,color:T.primary}}>{dailyHrs.toFixed(1)} hodin</span>.
+          Dnes si svůj zdravý život prodloužil o <span style={{fontWeight:700,color:T.primary}}>{todayHrs.toFixed(1)} hodin</span>.
         </div>
         <div style={{fontSize:12,color:T.textSec,lineHeight:1.5,fontFamily:T.f,marginTop:2}}>
           Za poslední měsíc jsi získal <span style={{fontWeight:600,color:T.pink}}>{monthDays} dní</span> zdraví navíc.
         </div>
       </div>
 
-      {parseFloat(untappedYears)>0.5&&(
+      {hasInactive&&parseFloat(untappedYears)>0.5&&(
         <div style={{display:"flex",alignItems:"center",gap:8,marginTop:10,padding:"8px 12px",
           background:T.cardAlt,borderRadius:T.rXs,border:`1px dashed ${T.gradStart}40`}}>
           <span style={{fontSize:16}}>✨</span>
@@ -583,6 +760,8 @@ export default function ElongaHLY() {
   const [onbAnswers, setOnbAnswers] = useState({});
   const [spanekGoals, setSpanekGoals] = useState([]);
   const [spanekHours, setSpanekHours] = useState(7.5);
+  const [selectedOpt, setSelectedOpt] = useState(null);
+  const [multiChoices, setMultiChoices] = useState([]);
 
   const [enabled, setEnabled] = useState({ pohyb: true, spanek: true, strava: false, stres: false, vztahy: false });
   const togglePillar = (k) => setEnabled(s => ({ ...s, [k]: !s[k] }));
@@ -590,29 +769,55 @@ export default function ElongaHLY() {
   const selectablePillars = PILLARS.filter(p => p.key !== "monitoring");
 
   const [chartView, setChartView] = useState("radar");
-  const [period, setPeriod] = useState("day");
+  const [period, setPeriod] = useState("week");
   const [data, setData] = useState(DEMO);
   const [hrvState, setHrvState] = useState(1);
   const [animate, setAnimate] = useState(false);
   const [age, setAge] = useState(40);
+  const [funcAge, setFuncAge] = useState(32);
   const [celebrated, setCelebrated] = useState(null);
-  const history = useMemo(() => generateHistory(30), []);
+  const history = useMemo(() => generateHistory(365), []);
 
   useEffect(() => { setTimeout(() => setAnimate(true), 150); }, []);
   useEffect(() => { setAnimate(false); setTimeout(() => setAnimate(true), 50); }, [chartView, period, screen, darkMode]);
   useEffect(() => { if (celebrated) { const t = setTimeout(() => setCelebrated(null), 3000); return () => clearTimeout(t); } }, [celebrated]);
 
+  // Current calendar week/month items from history
+  const periodItems = useMemo(() => {
+    if (period === "day") return null;
+    if (period === "week") {
+      const now = new Date();
+      const dow = now.getDay(); // 0=Sun
+      const mondayOffset = dow === 0 ? 6 : dow - 1;
+      const monday = new Date(now); monday.setDate(monday.getDate() - mondayOffset);
+      monday.setHours(0, 0, 0, 0);
+      return history.filter(d => d.date >= monday);
+    }
+    // Current calendar month
+    const now = new Date();
+    return history.filter(d => d.date.getMonth() === now.getMonth() && d.date.getFullYear() === now.getFullYear());
+  }, [period, history]);
+
   const periodData = useMemo(() => {
     if (period === "day") return data;
-    const items = period === "week" ? history.slice(-7) : history.slice(-30);
+    const items = periodItems || [];
+    if (items.length === 0) return data;
     const avg = {};
     PILLARS.forEach(p => { avg[p.key] = items.reduce((s, d) => s + (d.pillars[p.key] || 0), 0) / items.length; });
     return avg;
-  }, [period, data, history]);
+  }, [period, data, periodItems]);
 
   const totalMin = activePillars.reduce((s, p) => s + p.maxMin * (periodData[p.key] || 0), 0);
   const boosted = totalMin * HRV_STATES[hrvState].mult;
   const totalHrs = (boosted / 60).toFixed(1);
+  // Period totals from actual current calendar period
+  const periodTotal = useMemo(() => {
+    if (period === "day") return { hrs: totalHrs, label: "hodin zdraví", days: 1 };
+    const items = periodItems || [];
+    const sum = items.reduce((s, d) => s + d.hrsBoosted, 0);
+    const daysVal = (sum / 24).toFixed(1);
+    return { hrs: `${Math.round(sum)}h`, label: `(${daysVal} dní)`, days: items.length };
+  }, [period, periodItems, totalHrs]);
   const enabledCount = Object.values(enabled).filter(Boolean).length;
   const maxHlyDay = selectablePillars.filter(p => enabled[p.key]).reduce((s, p) => s + p.maxMin, 0) / 60 + 0.5;
 
@@ -694,7 +899,7 @@ export default function ElongaHLY() {
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 800, color: on ? p.color : T.textTer }}>+{(p.maxMin / 60).toFixed(1)}h</div>
-                    <div style={{ fontSize: 9, color: T.textTer }}>HLY/den</div>
+                    <div style={{ fontSize: 9, color: T.textTer }}>zdraví/den</div>
                   </div>
                   <div style={{ width: 28, height: 28, borderRadius: 14, flexShrink: 0,
                     background: on ? p.color : T.toggleBg, display: "flex", alignItems: "center", justifyContent: "center",
@@ -705,14 +910,14 @@ export default function ElongaHLY() {
               );
             })}
             <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
-              background: darkMode ? "#2D2A50" : "#F3F1FF", borderRadius: T.r, border: `2px solid ${darkMode ? "#3D3A60" : "#9B8FFF40"}`, opacity: 0.7 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: darkMode ? "#3D3A60" : "#9B8FFF20",
+              background: darkMode ? "#282A52" : "#EBEDF3", borderRadius: T.r, border: `2px solid ${darkMode ? "#383A60" : "#7B85A840"}`, opacity: 0.7 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: darkMode ? "#383A60" : "#7B85A820",
                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>📊</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Monitoring</div>
                 <div style={{ fontSize: 12, color: T.textSec, marginTop: 2 }}>HRV měření + zadávání aktivit</div>
               </div>
-              <div style={{ fontSize: 11, color: "#9B8FFF", fontWeight: 600, background: darkMode ? "#3D3A60" : "#9B8FFF15", padding: "4px 10px", borderRadius: 20 }}>Vždy aktivní</div>
+              <div style={{ fontSize: 11, color: "#7B85A8", fontWeight: 600, background: darkMode ? "#383A60" : "#7B85A815", padding: "4px 10px", borderRadius: 20 }}>Vždy aktivní</div>
             </div>
           </div>
 
@@ -721,7 +926,7 @@ export default function ElongaHLY() {
             background: `linear-gradient(transparent, ${T.bg} 20%)` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <span style={{ fontSize: 13, color: T.textSec }}>{enabledCount} {enabledCount < 5 ? "pilíře" : "pilířů"}</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: T.primary }}>až {maxHlyDay.toFixed(1)}h HLY/den</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: T.primary }}>až {maxHlyDay.toFixed(1)}h zdraví/den</span>
             </div>
             <button onClick={() => { setOnbSetupIdx(0); setOnbStep(2); }} disabled={enabledCount === 0} style={{
               width: "100%", padding: "16px", borderRadius: 16, border: "none",
@@ -780,7 +985,7 @@ export default function ElongaHLY() {
             <div style={{ width: 393, maxWidth: "100%", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
               <div style={{ flex: 1, padding: "40px 20px 20px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: darkMode ? "#2D2B50" : "#F0F1FF",
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: darkMode ? "#282A52" : "#ECEEFE",
                     display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🌙</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>Spánek</div>
@@ -816,12 +1021,11 @@ export default function ElongaHLY() {
                       }}>
                         <button onClick={() => toggleSpanekGoal(goal)}
                           style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "16px 18px",
-                            background: on ? (darkMode ? T.primarySoft : "#ECEEFF") : T.card,
+                            background: on ? (darkMode ? T.primarySoft : "#ECEEFE") : T.card,
                             borderRadius: on ? 0 : T.rSm,
                             border: on ? "none" : "none",
                             boxShadow: on ? "none" : T.shadow,
                             cursor: "pointer", textAlign: "left", fontFamily: T.f, transition: "all 0.2s ease" }}>
-                          <span style={{ fontSize: 22 }}>{goal.icon}</span>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 15, fontWeight: 600, color: on ? accentColor : T.text }}>{goal.label}</div>
                             <div style={{ fontSize: 12, color: T.textSec, marginTop: 2 }}>{goal.desc}</div>
@@ -835,7 +1039,7 @@ export default function ElongaHLY() {
 
                         {showPicker && (
                           <div style={{ padding: "18px 18px 14px", background: T.card,
-                            borderTop: `1px solid ${darkMode ? T.border : "#E8E9FF"}` }}>
+                            borderTop: `1px solid ${darkMode ? T.border : "#D7DAE6"}` }}>
                             <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 12 }}>
                               Kolik hodin chceš spát?
                             </div>
@@ -844,7 +1048,7 @@ export default function ElongaHLY() {
                             </div>
                             <style>{`
                               input[type="range"].spanek-hrs { -webkit-appearance: none; appearance: none; background: transparent; width: 100%; }
-                              input[type="range"].spanek-hrs::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; background: linear-gradient(90deg, ${darkMode ? "#2A2B50" : "#F0F1FF"}, ${accentColor}); }
+                              input[type="range"].spanek-hrs::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; background: linear-gradient(90deg, ${darkMode ? "#1A2058" : "#ECEEFE"}, ${accentColor}); }
                               input[type="range"].spanek-hrs::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: ${accentColor}; border: 3px solid ${T.card}; box-shadow: 0 2px 8px ${accentColor}40; margin-top: -10px; cursor: pointer; }
                             `}</style>
                             <input type="range" className="spanek-hrs" min="5" max="10" step="0.5" value={spanekHours}
@@ -886,49 +1090,115 @@ export default function ElongaHLY() {
         );
       }
 
-      // ─── OTHER PILLARS: simple single question ───
+      // ─── OTHER PILLARS ───
       const pillarSoft = darkMode ? (pillar.darkSoft || pillar.soft) : pillar.soft;
+      const isMulti = m.multiSelect;
+      const toggleMulti = (label) => {
+        setMultiChoices(prev => prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]);
+      };
+      const multiNext = () => {
+        setOnbAnswers(a => ({ ...a, [pillar.key]: multiChoices }));
+        setMultiChoices([]);
+        if (onbSetupIdx < activeForSetup.length - 1) setOnbSetupIdx(x => x + 1);
+        else setOnbStep(3);
+      };
+      const goBack = () => {
+        setMultiChoices([]);
+        if (onbSetupIdx > 0) setOnbSetupIdx(x => x - 1);
+        else setOnbStep(1);
+      };
       return (
         <ThemeCtx.Provider value={T}>
         <div style={{ background: T.bg, fontFamily: T.f, display: "flex", justifyContent: "center" }}>
-          <div style={{ width: 393, maxWidth: "100%", minHeight: "100vh", padding: "60px 20px 40px" }}>
-            <div style={{ fontSize: 11, color: T.textTer, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>
-              Krok 2 z 3 · {onbSetupIdx + 1}/{activeForSetup.length}
-            </div>
-            <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
-              {activeForSetup.map((p, i) => (
-                <div key={p.key} style={{ flex: 1, height: 4, borderRadius: 2,
-                  background: i <= onbSetupIdx ? p.color : T.border,
-                  opacity: i <= onbSetupIdx ? 1 : 0.4, transition: "all 0.4s ease" }} />
-              ))}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 32 }}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: pillarSoft,
-                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>{pillar.icon}</div>
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: T.text }}>{pillar.label}</div>
-                <div style={{ fontSize: 13, color: pillar.color, fontWeight: 600 }}>Až +{(pillar.maxMin / 60).toFixed(1)}h HLY/den</div>
+          <div style={{ width: 393, maxWidth: "100%", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+            <div style={{ flex: 1, padding: "40px 20px 20px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: pillarSoft,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{pillar.icon}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{pillar.label}</div>
+                  <div style={{ fontSize: 10, color: T.textTer }}>{onbSetupIdx + 1} z {activeForSetup.length}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
+                {activeForSetup.map((p, i) => (
+                  <div key={p.key} style={{ flex: 1, height: 4, borderRadius: 2,
+                    background: i <= onbSetupIdx ? p.color : T.border,
+                    opacity: i <= onbSetupIdx ? 1 : 0.4, transition: "all 0.3s ease" }} />
+                ))}
+              </div>
+
+              <div style={{ fontSize: 22, fontWeight: 800, color: T.text, lineHeight: 1.3, marginBottom: 6 }}>
+                {m.question}
+              </div>
+              {isMulti && <div style={{ fontSize: 14, color: T.textSec, lineHeight: 1.5, marginBottom: 24 }}>
+                Vyber 1 nebo více cílů
+              </div>}
+              {!isMulti && <div style={{ marginBottom: 24 }} />}
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {m.options.map((opt, i) => {
+                  if (isMulti) {
+                    const on = multiChoices.includes(opt.label);
+                    return (
+                      <div key={i} style={{ borderRadius: T.rSm,
+                        border: on ? `2px solid ${T.primary}` : "none",
+                        overflow: "hidden", transition: "all 0.2s ease" }}>
+                        <button onClick={() => toggleMulti(opt.label)}
+                          style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "16px 18px",
+                            background: on ? (darkMode ? T.primarySoft : "#ECEEFE") : T.card,
+                            borderRadius: on ? 0 : T.rSm, border: "none",
+                            boxShadow: on ? "none" : T.shadow,
+                            cursor: "pointer", textAlign: "left", fontFamily: T.f, transition: "all 0.2s ease" }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 15, fontWeight: 600, color: on ? T.primary : T.text }}>{opt.label}</div>
+                            <div style={{ fontSize: 12, color: T.textSec, marginTop: 2 }}>{opt.desc}</div>
+                          </div>
+                          <div style={{ width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                            background: on ? T.primary : T.toggleBg,
+                            display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease" }}>
+                            {on && <svg width="10" height="8" viewBox="0 0 14 10"><path d="M1 5l4 4 8-8" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                          </div>
+                        </button>
+                      </div>
+                    );
+                  }
+                  // single-select: tap to advance
+                  return (
+                    <button key={i} onClick={() => {
+                      setOnbAnswers(a => ({ ...a, [pillar.key]: opt.label }));
+                      if (onbSetupIdx < activeForSetup.length - 1) setOnbSetupIdx(x => x + 1);
+                      else setOnbStep(3);
+                    }}
+                      style={{ width: "100%", display: "flex", alignItems: "center", padding: "16px 18px",
+                        background: T.card, borderRadius: T.rSm, border: "none",
+                        boxShadow: T.shadow,
+                        cursor: "pointer", textAlign: "left", fontFamily: T.f, transition: "all 0.2s ease" }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 15, fontWeight: 600, color: T.text }}>{opt.label}</div>
+                        <div style={{ fontSize: 12, color: T.textSec, marginTop: 2 }}>{opt.desc}</div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: T.text, marginBottom: 20 }}>{m.question}</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {m.options.map((opt, i) => (
-                <button key={i} onClick={() => {
-                  setOnbAnswers(a => ({ ...a, [pillar.key]: opt }));
-                  if (onbSetupIdx < activeForSetup.length - 1) setOnbSetupIdx(x => x + 1);
-                  else setOnbStep(3);
-                }} style={{
-                  display: "flex", alignItems: "center", gap: 12, padding: "16px 18px",
-                  background: T.card, borderRadius: T.rSm, border: `2px solid ${T.border}`,
-                  cursor: "pointer", textAlign: "left", fontFamily: T.f, fontSize: 14, fontWeight: 500, color: T.text,
-                  boxShadow: T.shadow,
-                }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 16, background: T.cardAlt,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 14, color: T.textSec, fontWeight: 700, flexShrink: 0 }}>{String.fromCharCode(65 + i)}</div>
-                  {opt}
-                </button>
-              ))}
+
+            {/* Bottom bar */}
+            <div style={{ position: "sticky", bottom: 0, padding: "12px 20px 32px",
+              background: `linear-gradient(transparent, ${T.bg} 20%)` }}>
+              {isMulti && <button onClick={multiNext} disabled={multiChoices.length === 0} style={{
+                width: "100%", padding: "16px", borderRadius: 16, border: "none",
+                background: multiChoices.length > 0 ? `linear-gradient(135deg, ${T.gradStart}, ${T.gradEnd})` : T.border,
+                color: multiChoices.length > 0 ? "white" : T.textTer, fontSize: 16, fontWeight: 700,
+                cursor: multiChoices.length > 0 ? "pointer" : "default", fontFamily: T.f,
+                boxShadow: multiChoices.length > 0 ? `0 4px 20px ${T.gradStart}40` : "none",
+              }}>Pokračovat</button>}
+              <button onClick={goBack} style={{
+                width: "100%", padding: "12px", marginTop: isMulti ? 8 : 0, borderRadius: 12,
+                border: "none", background: "transparent",
+                color: T.textSec, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: T.f,
+              }}>← O krok zpět</button>
             </div>
           </div>
         </div>
@@ -938,11 +1208,21 @@ export default function ElongaHLY() {
 
     // ── Step 3: Potential ──
     if (onbStep === 3) {
-      const remaining = Math.max(65 - age, 0);
+      const effectiveAge = funcAge != null ? funcAge : age;
+      const remaining = Math.max(65 - effectiveAge, 0);
+      // Active pillars projection
       const potentialYears = remaining > 0 ? ((maxHlyDay * 365 / 24) * remaining) / 365 : 0;
       const projected = 65 + potentialYears;
-      const basePct = ((65 - age) / (80 - age)) * 100;
-      const projPct = ((projected - age) / (80 - age)) * 100;
+      // ALL pillars projection (including inactive)
+      const allPillarsMax = PILLARS.reduce((s, p) => s + p.maxMin, 0) / 60;
+      const fullPotentialYears = remaining > 0 ? ((allPillarsMax * 365 / 24) * remaining) / 365 : 0;
+      const fullProjected = 65 + fullPotentialYears;
+      // Bar percentages
+      const basePct = ((65 - effectiveAge) / (80 - effectiveAge)) * 100;
+      const projPct = ((projected - effectiveAge) / (80 - effectiveAge)) * 100;
+      const fullProjPct = ((fullProjected - effectiveAge) / (80 - effectiveAge)) * 100;
+      // Inactive pillars (not enabled, not monitoring)
+      const inactivePillars = selectablePillars.filter(p => !enabled[p.key]);
       return (
         <ThemeCtx.Provider value={T}>
         <div style={{ background: T.bg, fontFamily: T.f, display: "flex", justifyContent: "center" }}>
@@ -952,24 +1232,46 @@ export default function ElongaHLY() {
             <div style={{ textAlign: "center", marginBottom: 32,
               opacity: animate ? 1 : 0, transform: animate ? "scale(1)" : "scale(0.8)",
               transition: "all 1s cubic-bezier(0.34,1.56,0.64,1)", transitionDelay: "0.3s" }}>
-              <div style={{ fontSize: 64, fontWeight: 900, lineHeight: 1,
-                background: `linear-gradient(135deg, ${T.gradStart}, ${T.gradEnd})`,
-                backgroundClip: "text", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent" }}>{projected.toFixed(1)}</div>
+              <div style={{ fontSize: 64, fontWeight: 900, lineHeight: 1, color: T.primary }}>{projected.toFixed(1)}</div>
               <div style={{ fontSize: 16, color: T.textSec, marginTop: 8 }}>let ve zdraví</div>
             </div>
             <div style={{ marginBottom: 24, opacity: animate ? 1 : 0, transition: "opacity 0.8s ease", transitionDelay: "0.8s" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                <div style={{ width: 8, height: 8, borderRadius: 4, background: `linear-gradient(135deg, ${T.gradStart}, ${T.gradEnd})` }} />
-                <span style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>Tvá cesta</span>
+              {inactivePillars.length > 0 && <>
+              {/* Tvůj potenciál bar (all pillars) — only when not all selected */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 4, background: T.primaryMuted, opacity: 0.5 }} />
+                  <span style={{ fontSize: 12, color: T.textSec, fontStyle: "italic" }}>Tvůj potenciál</span>
+                </div>
+                <span style={{ fontSize: 12, color: T.textSec, fontWeight: 600 }}>{fullProjected.toFixed(1)} let</span>
+              </div>
+              <div style={{ height: 28, borderRadius: 14, background: T.border, overflow: "hidden", marginBottom: 12, position: "relative" }}>
+                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, borderRadius: 14,
+                  width: animate ? `${fullProjPct}%` : "0%",
+                  background: `repeating-linear-gradient(90deg, ${T.primaryMuted}40 0px, ${T.primaryMuted}40 6px, transparent 6px, transparent 12px)`,
+                  transition: "width 2s cubic-bezier(0.34,1.56,0.64,1)", transitionDelay: "0.8s" }} />
+              </div>
+              </>}
+              {/* Tvá cesta / Tvůj potenciál bar */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 4, background: `linear-gradient(135deg, ${T.gradStart}, ${T.gradEnd})` }} />
+                  <span style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{inactivePillars.length > 0 ? "Tvá cesta" : "Tvůj potenciál"}</span>
+                </div>
+                <span style={{ fontSize: 12, color: T.text, fontWeight: 700 }}>{projected.toFixed(1)} let</span>
               </div>
               <div style={{ height: 28, borderRadius: 14, background: T.border, overflow: "hidden", marginBottom: 12, position: "relative" }}>
                 <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, borderRadius: 14,
                   width: animate ? `${projPct}%` : "0%", background: `linear-gradient(90deg, ${T.gradStart}, ${T.gradEnd})`,
                   transition: "width 2s cubic-bezier(0.34,1.56,0.64,1)", transitionDelay: "1s" }} />
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                <div style={{ width: 8, height: 8, borderRadius: 4, background: T.borderStrong }} />
-                <span style={{ fontSize: 12, color: T.textSec }}>Průměr populace</span>
+              {/* Průměr populace bar */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 4, background: T.borderStrong }} />
+                  <span style={{ fontSize: 12, color: T.textSec }}>Průměr populace</span>
+                </div>
+                <span style={{ fontSize: 12, color: T.textSec, fontWeight: 600 }}>65.0 let</span>
               </div>
               <div style={{ height: 28, borderRadius: 14, background: T.border, overflow: "hidden", position: "relative" }}>
                 <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${basePct}%`, borderRadius: 14, background: T.borderStrong }} />
@@ -977,7 +1279,8 @@ export default function ElongaHLY() {
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginBottom: 24,
               opacity: animate ? 1 : 0, transition: "opacity 0.5s ease", transitionDelay: "1.5s" }}>
-              {activePillars.map(p => {
+              {/* Active pillars */}
+              {activePillars.filter(p => p.key !== "monitoring").map(p => {
                 const softBg = darkMode ? (p.darkSoft || p.soft) : p.soft;
                 return (
                   <div key={p.key} style={{ display: "flex", alignItems: "center", gap: 6, background: softBg, borderRadius: 20, padding: "6px 12px" }}>
@@ -986,13 +1289,27 @@ export default function ElongaHLY() {
                   </div>
                 );
               })}
+              {/* Inactive pillars — shown dimmed with dashed border */}
+              {inactivePillars.map(p => (
+                <div key={p.key} style={{ display: "flex", alignItems: "center", gap: 6,
+                  background: "transparent", border: `1.5px dashed ${T.borderStrong}`,
+                  borderRadius: 20, padding: "5px 11px", opacity: 0.6 }}>
+                  <span style={{ fontSize: 14 }}>{p.icon}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: T.textTer }}>+{(p.maxMin / 60).toFixed(1)}h</span>
+                </div>
+              ))}
             </div>
             <div style={{ background: `linear-gradient(135deg, ${T.gradStart}0D, ${T.gradEnd}08)`,
               borderRadius: T.rSm, padding: "16px", border: `1px solid ${T.border}`, marginBottom: 32,
               opacity: animate ? 1 : 0, transition: "opacity 0.5s ease", transitionDelay: "2s" }}>
               <div style={{ fontSize: 14, color: T.text, lineHeight: 1.6 }}>
-                Při plnění {enabledCount} pilířů můžeš každý den získat až{" "}
-                <strong style={{ color: T.primary }}>{maxHlyDay.toFixed(1)} hodin</strong> zdravého života navíc.
+                {inactivePillars.length > 0
+                  ? <>Při plnění {enabledCount} pilířů získáváš až{" "}
+                      <strong style={{ color: T.primary }}>{maxHlyDay.toFixed(1)} hodin</strong>/den.
+                      Se všemi pilíři to může být až{" "}
+                      <strong style={{ color: T.primary }}>{allPillarsMax.toFixed(1)} hodin</strong>/den.</>
+                  : <>Při plnění všech pilířů můžeš každý den získat až{" "}
+                      <strong style={{ color: T.primary }}>{allPillarsMax.toFixed(1)} hodin</strong> zdravého života navíc.</>}
               </div>
             </div>
             <div style={{ flex: 1 }} />
@@ -1051,13 +1368,13 @@ export default function ElongaHLY() {
           })}
           <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px",
             background: T.card, borderRadius: T.r, opacity: 0.6 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: darkMode ? "#2D2A50" : "#F3F1FF",
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: darkMode ? "#282A52" : "#EBEDF3",
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>📊</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Monitoring</div>
               <div style={{ fontSize: 12, color: T.textSec, marginTop: 1 }}>+0.5h/den · Vždy aktivní</div>
             </div>
-            <div style={{ width: 50, height: 28, borderRadius: 14, padding: 2, background: "#9B8FFF" }}>
+            <div style={{ width: 50, height: 28, borderRadius: 14, padding: 2, background: "#7B85A8" }}>
               <div style={{ width: 24, height: 24, borderRadius: 12, background: "white",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.15)", transform: "translateX(22px)" }} />
             </div>
@@ -1070,7 +1387,7 @@ export default function ElongaHLY() {
             boxShadow: T.shadowLg }}>
             <div style={{ fontSize: 13, color: T.textSec }}>
               {enabledCount} {enabledCount < 5 ? "pilíře" : "pilířů"} aktivních · max{" "}
-              <strong style={{ color: T.primary }}>{maxHlyDay.toFixed(1)}h HLY/den</strong>
+              <strong style={{ color: T.primary }}>{maxHlyDay.toFixed(1)}h zdraví/den</strong>
             </div>
           </div>
         </div>
@@ -1089,13 +1406,16 @@ export default function ElongaHLY() {
       <style key={darkMode ? "dark" : "light"}>{`
         @keyframes fadeOut { from{opacity:1} to{opacity:0} }
         @keyframes slideUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-        input[type="range"] {
-          -webkit-appearance: none; appearance: none; background: transparent;
+        input[type="range"],
+        input[type="range"].age-slider {
+          -webkit-appearance: none; appearance: none; background: transparent; width: 100%;
         }
-        input[type="range"]::-webkit-slider-runnable-track {
+        input[type="range"]::-webkit-slider-runnable-track,
+        input[type="range"].age-slider::-webkit-slider-runnable-track {
           height: 4px; border-radius: 2px; background: ${T.border};
         }
-        input[type="range"]::-webkit-slider-thumb {
+        input[type="range"]::-webkit-slider-thumb,
+        input[type="range"].age-slider::-webkit-slider-thumb {
           -webkit-appearance: none; appearance: none;
           width: 18px; height: 18px; border-radius: 50%;
           background: ${T.primary}; border: 2px solid ${T.card};
@@ -1111,8 +1431,9 @@ export default function ElongaHLY() {
             <button onClick={() => setScreen("settings")} style={{width:44,height:44,borderRadius:22,background:T.card,
               boxShadow:T.shadow, border:"none", cursor:"pointer",
               display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.textSec} strokeWidth="2" strokeLinecap="round">
-                <circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.textSec} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                <circle cx="12" cy="12" r="3"/>
               </svg>
             </button>
           </div>
@@ -1121,7 +1442,7 @@ export default function ElongaHLY() {
         {/* HERO: THE GAP */}
         <div style={{margin:"10px 16px 4px",background:`linear-gradient(145deg, ${T.gradStart}12, ${T.gradEnd}0A)`,
           borderRadius:T.r,padding:"2px",boxShadow:`0 4px 20px ${T.gradStart}15`}}>
-          <TheGap data={periodData} hrvState={hrvState} age={age} onAgeChange={setAge} animate={animate} activePillars={activePillars}/>
+          <TheGap data={periodData} todayData={data} hrvState={hrvState} age={age} onAgeChange={setAge} funcAge={funcAge} onFuncAgeChange={setFuncAge} animate={animate} activePillars={activePillars} history={history}/>
         </div>
 
         {/* PERIOD TOGGLE */}
@@ -1137,29 +1458,32 @@ export default function ElongaHLY() {
           ))}
         </div>
 
-        {/* DAY VIEW */}
-        {period==="day"&&<>
-          <div style={{margin:"8px 16px",background:T.card,borderRadius:T.r,padding:"16px",boxShadow:T.shadow}}>
-            <div style={{display:"flex",background:T.cardAlt,borderRadius:T.rSm,padding:3,gap:3,marginBottom:12}}>
-              {[{id:"radar",label:"Radar"},{id:"gauges",label:"Budíky"}].map(tab=>(
-                <button key={tab.id} onClick={()=>setChartView(tab.id)} style={{
-                  flex:1,padding:"7px 0",borderRadius:T.rXs,border:"none",
-                  background:chartView===tab.id?T.card:"transparent",
-                  boxShadow:chartView===tab.id?T.shadow:"none",
-                  color:chartView===tab.id?T.text:T.textTer,fontSize:12,fontWeight:600,cursor:"pointer",
-                  transition:"all 0.25s ease",fontFamily:T.f,
-                }}>{tab.label}</button>
-              ))}
-            </div>
-            <div style={{display:"flex",justifyContent:"center",position:"relative"}}>
-              {chartView==="radar"?<RadarChart data={data} pillars={activePillars} animate={animate}/>:<GaugeGrid data={data} pillars={activePillars} animate={animate}/>}
-              {chartView==="radar"&&<div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%, -50%)",textAlign:"center",pointerEvents:"none"}}>
-                <div style={{fontSize:30,fontWeight:800,color:T.text,lineHeight:1}}>{totalHrs}</div>
-                <div style={{fontSize:10,color:T.textSec,fontWeight:500}}>HLY hodin</div>
-              </div>}
-            </div>
+        {/* CHARTS — Radar / Kruhy / Budíky — always visible */}
+        <div style={{margin:"8px 16px",background:T.card,borderRadius:T.r,padding:"16px",boxShadow:T.shadow}}>
+          <div style={{display:"flex",background:T.cardAlt,borderRadius:T.rSm,padding:3,gap:3,marginBottom:12}}>
+            {[{id:"radar",label:"Radar"},{id:"rings",label:"Kruhy"},{id:"gauges",label:"Budíky"}].map(tab=>(
+              <button key={tab.id} onClick={()=>setChartView(tab.id)} style={{
+                flex:1,padding:"7px 0",borderRadius:T.rXs,border:"none",
+                background:chartView===tab.id?T.card:"transparent",
+                boxShadow:chartView===tab.id?T.shadow:"none",
+                color:chartView===tab.id?T.text:T.textTer,fontSize:12,fontWeight:600,cursor:"pointer",
+                transition:"all 0.25s ease",fontFamily:T.f,
+              }}>{tab.label}</button>
+            ))}
           </div>
+          <div style={{display:"flex",justifyContent:"center",position:"relative"}}>
+            {chartView==="radar"&&<RadarChart data={periodData} pillars={activePillars} animate={animate}/>}
+            {chartView==="rings"&&<ActivityRings data={periodData} pillars={activePillars} animate={animate} periodTotal={periodTotal}/>}
+            {chartView==="gauges"&&<GaugeGrid data={periodData} pillars={activePillars} animate={animate} periodDays={periodTotal.days}/>}
+            {chartView==="radar"&&<div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%, -50%)",textAlign:"center",pointerEvents:"none"}}>
+              <div style={{fontSize:30,fontWeight:800,color:T.text,lineHeight:1}}>{periodTotal.hrs}</div>
+              <div style={{fontSize:10,color:T.textSec,fontWeight:500}}>{periodTotal.label}</div>
+            </div>}
+          </div>
+        </div>
 
+        {/* PILÍŘE ZDRAVÍ — day: interactive, week/month: averaged */}
+        {period==="day"&&(
           <div style={{margin:"8px 16px",background:T.card,borderRadius:T.r,padding:"14px 16px",boxShadow:T.shadow}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -1174,32 +1498,10 @@ export default function ElongaHLY() {
               onChange={v=>setData(d=>({...d,[p.key]:v}))}
               celebrated={celebrated} onCelebrate={setCelebrated}/>)}
           </div>
-
-          <div style={{margin:"8px 16px"}}>
-            <NudgeCards data={data} activePillars={activePillars}/>
-          </div>
-        </>}
-
-        {/* WEEK / MONTH VIEW */}
-        {(period==="week"||period==="month")&&<>
-          <div style={{margin:"8px 16px"}}><PeriodSummary history={history} period={period} activePillars={activePillars}/></div>
-
-          <div style={{margin:"8px 16px",background:T.card,borderRadius:T.r,padding:"16px",boxShadow:T.shadow}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-              <div style={{width:6,height:6,borderRadius:3,background:T.primary}}/>
-              <span style={{fontSize:13,fontWeight:700,color:T.text,fontFamily:T.f}}>Denní HLY</span>
-              <span style={{marginLeft:"auto",fontSize:11,color:T.textTer,fontFamily:T.f}}>max 6h/den</span>
-            </div>
-            <BarChart history={history} period={period} animate={animate}/>
-          </div>
-
-          <div style={{margin:"8px 16px",background:T.card,borderRadius:T.r,padding:"16px",boxShadow:T.shadow}}>
-            <CumulativeTrend history={history} period={period} animate={animate}/>
-          </div>
-
-          {/* Pilíře — averaged */}
-          {(()=>{
-            const items=period==="week"?history.slice(-7):history.slice(-30);
+        )}
+        {(period==="week"||period==="month")&&(()=>{
+            const items=periodItems||[];
+            if(items.length===0)return null;
             const avgData={};
             activePillars.forEach(p=>{avgData[p.key]=items.reduce((s,d)=>s+(d.pillars[p.key]||0),0)/items.length;});
             const avgTotalMin=activePillars.reduce((s,p)=>s+p.maxMin*(avgData[p.key]||0),0);
@@ -1218,8 +1520,7 @@ export default function ElongaHLY() {
                 </div>
                 {activePillars.map(p=>{
                   const val=avgData[p.key]||0;const pct=Math.round(val*100);
-                  const days=period==="week"?7:30;
-                  const hly=((p.maxMin*val*days)/60).toFixed(1);
+                  const hly=((p.maxMin*val*items.length)/60).toFixed(1);
                   const isFull=pct>=95;
                   const softBg = darkMode ? (p.darkSoft || p.soft) : p.soft;
                   return (
@@ -1257,7 +1558,16 @@ export default function ElongaHLY() {
               </div>
             );
           })()}
-        </>}
+
+        {/* NUDGE CARDS — day only */}
+        {period==="day"&&<div style={{margin:"8px 16px"}}>
+          <NudgeCards data={data} activePillars={activePillars}/>
+        </div>}
+
+        {/* BAR CHART — always visible */}
+        <div style={{margin:"8px 16px"}}>
+          <BarChartCard history={history} animate={animate}/>
+        </div>
 
         {/* HRV RESILIENCE BOOST */}
         <div style={{margin:"8px 16px",background:T.card,borderRadius:T.r,padding:"14px 16px 12px",boxShadow:T.shadow}}>
@@ -1283,7 +1593,7 @@ export default function ElongaHLY() {
         <div style={{padding:"24px 20px 40px",textAlign:"center"}}>
           <button onClick={() => {
             setScreen("onboarding"); setOnbStep(0); setOnbSetupIdx(0); setOnbAnswers({});
-            setSpanekGoals([]); setSpanekHours(7.5);
+            setSpanekGoals([]); setSpanekHours(7.5); setSelectedOpt(null); setMultiChoices([]);
             setEnabled({ pohyb: true, spanek: true, strava: false, stres: false, vztahy: false });
           }} style={{background:"none",border:"none",cursor:"pointer",
             fontSize:12,fontWeight:600,color:T.textTer,fontFamily:T.f,padding:0}}>
