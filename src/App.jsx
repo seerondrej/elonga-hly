@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, createContext, useContext } from "react";
+import { fetchToday, fetchHistory } from './api';
 
 // ═══════════════════════════════════════════════════
 // DESIGN SYSTEM — Elonga
@@ -302,7 +303,7 @@ function aggregateByWeek(history) {
     const last = chunk[chunk.length - 1];
     const first = chunk[0];
     const avgHrv = Math.round(chunk.reduce((s, d) => s + d.hrvIdx, 0) / chunk.length);
-    weeks.unshift({ avg, total, label: `${first.dayNum}.–${last.dayNum}.`, date: last.date, count: chunk.length, hrvIdx: avgHrv });
+    weeks.unshift({ avg, total, label: `${first.dayNum}.–${last.dayNum}.`, date: last.date, count: chunk.length, hrvIdx: avgHrv, items: chunk });
   }
   return weeks.slice(-12);
 }
@@ -322,15 +323,16 @@ function aggregateByMonth(history) {
     date: m.date,
     count: m.items.length,
     hrvIdx: Math.round(m.items.reduce((s, d) => s + d.hrvIdx, 0) / m.items.length),
+    items: m.items,
   }}).slice(-12);
 }
 
 function BarChartCard({ history, animate }) {
   const T = useTheme();
+  const isDark = T === DARK;
   const [barPeriod, setBarPeriod] = useState("day");
-  const [selected, setSelected] = useState(null);
-
   const dayItems = history.slice(-30);
+  const [selected, setSelected] = useState(dayItems.length >= 2 ? dayItems.length - 2 : null);
   const weekItems = useMemo(() => aggregateByWeek(history), [history]);
   const monthItems = useMemo(() => aggregateByMonth(history), [history]);
 
@@ -367,7 +369,7 @@ function BarChartCard({ history, animate }) {
         </div>
         <div style={{display:"flex",background:T.cardAlt,borderRadius:8,padding:2}}>
           {["day","week","month"].map(p=>(
-            <button key={p} onClick={()=>{setBarPeriod(p);setSelected(null);}} style={{
+            <button key={p} onClick={()=>{setBarPeriod(p);setSelected(p==="day"&&dayItems.length>=2?dayItems.length-2:null);}} style={{
               padding:"4px 10px",borderRadius:6,border:"none",cursor:"pointer",
               background:barPeriod===p?T.primary:"transparent",
               color:barPeriod===p?"white":T.textTer,
@@ -422,6 +424,193 @@ function BarChartCard({ history, animate }) {
           })}
         </div>
       </div>
+
+      {/* ── Detail Panel (all periods) ── */}
+      {(()=>{
+        const item = items[sel];
+        if (!item) return null;
+
+        // === Resolve source days & display info per period ===
+        let displayDate, totalHrs, sourceItems, avgLabel;
+        if (barPeriod === "day") {
+          const dateObj = item.date;
+          const fd = dateObj.toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "long" });
+          displayDate = fd.charAt(0).toUpperCase() + fd.slice(1);
+          totalHrs = item.hrsBoosted;
+          sourceItems = [item];
+          // 7-day avg for comparison
+          const selIdx = history.indexOf(item);
+          const avgSlice = selIdx >= 0 ? history.slice(Math.max(0, selIdx - 6), selIdx + 1) : dayItems.slice(-7);
+          const avg7 = avgSlice.reduce((s, x) => s + x.hrsBoosted, 0) / avgSlice.length;
+          const diff = totalHrs - avg7;
+          avgLabel = diff >= 0 ? `o ${Math.abs(diff).toFixed(1)} h více než průměr` : `o ${Math.abs(diff).toFixed(1)} h méně než průměr`;
+        } else if (barPeriod === "week") {
+          displayDate = `Týden ${item.label}`;
+          totalHrs = item.total;
+          sourceItems = item.items || [];
+          // Compare to adjacent weeks avg
+          const otherWeeks = weekItems.filter((_, i) => i !== sel);
+          if (otherWeeks.length > 0) {
+            const avgTotal = otherWeeks.reduce((s, w) => s + w.total, 0) / otherWeeks.length;
+            const diff = totalHrs - avgTotal;
+            avgLabel = diff >= 0 ? `o ${Math.abs(diff).toFixed(1)} h více než průměr týdnů` : `o ${Math.abs(diff).toFixed(1)} h méně než průměr týdnů`;
+          } else { avgLabel = ""; }
+        } else {
+          const fd = item.date.toLocaleDateString("cs-CZ", { month: "long", year: "numeric" });
+          displayDate = fd.charAt(0).toUpperCase() + fd.slice(1);
+          totalHrs = item.total;
+          sourceItems = item.items || [];
+          const otherMonths = monthItems.filter((_, i) => i !== sel);
+          if (otherMonths.length > 0) {
+            const avgTotal = otherMonths.reduce((s, m) => s + m.total, 0) / otherMonths.length;
+            const diff = totalHrs - avgTotal;
+            avgLabel = diff >= 0 ? `o ${Math.abs(diff).toFixed(1)} h více než průměr měsíců` : `o ${Math.abs(diff).toFixed(1)} h méně než průměr měsíců`;
+          } else { avgLabel = ""; }
+        }
+
+        // Stars based on daily avg for week/month, or absolute for day
+        const dailyAvgHrs = barPeriod === "day" ? totalHrs : (sourceItems.length > 0 ? totalHrs / sourceItems.length : 0);
+        const stars = dailyAvgHrs > 5 ? 3 : dailyAvgHrs > 3 ? 2 : dailyAvgHrs > 1 ? 1 : 0;
+
+        // Pillar averages across source items
+        const pillarAvgs = {};
+        PILLARS.forEach(p => {
+          pillarAvgs[p.key] = sourceItems.length > 0
+            ? sourceItems.reduce((s, d) => s + (d.pillars[p.key] || 0), 0) / sourceItems.length
+            : 0;
+        });
+
+        // HRV state (most common in period)
+        const hrvCounts = [0, 0, 0];
+        sourceItems.forEach(d => { hrvCounts[d.hrvIdx != null ? d.hrvIdx : 1]++; });
+        const dominantHrv = hrvCounts.indexOf(Math.max(...hrvCounts));
+        const hrvS = HRV_STATES[dominantHrv];
+
+        // Streak — consecutive days with >0 hours counting back from last day in sourceItems
+        let streak = 0;
+        if (sourceItems.length > 0) {
+          const lastDay = sourceItems[sourceItems.length - 1];
+          const lastIdx = history.indexOf(lastDay);
+          if (lastIdx >= 0) {
+            for (let i = lastIdx; i >= 0; i--) { if (history[i].hrsBoosted > 0) streak++; else break; }
+          }
+        }
+
+        // Best period badge
+        let bestBadge = null;
+        if (barPeriod === "day") {
+          const dateObj = item.date;
+          const dow = dateObj.getDay();
+          const monOff = dow === 0 ? 6 : dow - 1;
+          const mon = new Date(dateObj); mon.setDate(mon.getDate() - monOff); mon.setHours(0,0,0,0);
+          const sun = new Date(mon); sun.setDate(sun.getDate() + 6); sun.setHours(23,59,59,999);
+          const wd = history.filter(x => x.date >= mon && x.date <= sun);
+          if (wd.length > 0 && wd.every(x => item.hrsBoosted >= x.hrsBoosted)) bestBadge = "Nejlepší den tohoto týdne";
+        } else if (barPeriod === "week") {
+          if (weekItems.length > 1 && weekItems.every(w => item.total >= w.total)) bestBadge = "Nejlepší týden";
+        } else {
+          if (monthItems.length > 1 && monthItems.every(m => item.total >= m.total)) bestBadge = "Nejlepší měsíc";
+        }
+
+        // Format total hours display
+        const hrsDisplay = barPeriod === "day" ? `${totalHrs.toFixed(1)} h` : `${totalHrs.toFixed(0)} h`;
+        const daysExtra = barPeriod !== "day" ? ` (${(totalHrs / 24).toFixed(1)} dní)` : "";
+
+        return (
+          <div style={{
+            borderTop: `1px solid ${T.border}`, marginTop: 12, paddingTop: 12,
+            overflow: "hidden", transition: "max-height 0.3s ease, opacity 0.3s ease",
+            maxHeight: 500, opacity: 1,
+          }}>
+            {/* Row 1 — Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.text, fontFamily: T.f }}>{displayDate}</span>
+              <span style={{ fontSize: 14, letterSpacing: 1 }} title={`${stars}/3`}>
+                {"★".repeat(stars)}{"☆".repeat(3 - stars)}
+              </span>
+            </div>
+
+            {/* Row 2 — Hours summary */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={{
+                fontSize: 12, fontWeight: 700, color: "white", fontFamily: T.f,
+                background: `linear-gradient(135deg, ${T.gradStart}, ${T.gradEnd})`,
+                borderRadius: 10, padding: "2px 10px",
+              }}>{hrsDisplay}{daysExtra}</span>
+              {avgLabel && <span style={{ fontSize: 11, color: T.textSec, fontFamily: T.f }}>{avgLabel}</span>}
+            </div>
+
+            {/* Row 2.5 — Period stats (week/month only) */}
+            {barPeriod !== "day" && sourceItems.length > 0 && (
+              <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                <div style={{ background: T.cardAlt, borderRadius: T.rXs, padding: "6px 10px", textAlign: "center", flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.primary, fontFamily: T.f }}>{(totalHrs / sourceItems.length).toFixed(1)}h</div>
+                  <div style={{ fontSize: 9, color: T.textTer, fontWeight: 600, fontFamily: T.f, textTransform: "uppercase" }}>Průměr/den</div>
+                </div>
+                <div style={{ background: T.cardAlt, borderRadius: T.rXs, padding: "6px 10px", textAlign: "center", flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.green, fontFamily: T.f }}>
+                    {Math.max(...sourceItems.map(d => d.hrsBoosted)).toFixed(1)}h
+                  </div>
+                  <div style={{ fontSize: 9, color: T.textTer, fontWeight: 600, fontFamily: T.f, textTransform: "uppercase" }}>Nejlepší den</div>
+                </div>
+                <div style={{ background: T.cardAlt, borderRadius: T.rXs, padding: "6px 10px", textAlign: "center", flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.purple, fontFamily: T.f }}>{sourceItems.length}</div>
+                  <div style={{ fontSize: 9, color: T.textTer, fontWeight: 600, fontFamily: T.f, textTransform: "uppercase" }}>Dní</div>
+                </div>
+              </div>
+            )}
+
+            {/* Row 3 — Pillar breakdown */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 10 }}>
+              {PILLARS.map(p => {
+                const val = pillarAvgs[p.key] || 0;
+                const mins = barPeriod === "day"
+                  ? Math.round(val * p.maxMin)
+                  : Math.round(val * p.maxMin * sourceItems.length);
+                const isMonitoring = p.key === "monitoring";
+                const softBg = isDark ? (p.darkSoft || p.soft) : p.soft;
+                const minsLabel = barPeriod === "day" ? `${mins} min` : mins >= 60 ? `${(mins/60).toFixed(1)} h` : `${mins} min`;
+                return (
+                  <div key={p.key} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 12, width: 18, textAlign: "center", flexShrink: 0 }}>{p.icon}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: T.textSec, fontFamily: T.f, width: 62, flexShrink: 0 }}>{p.label}</span>
+                    <div style={{ flex: 1, height: 4, borderRadius: 2, background: softBg, overflow: "hidden" }}>
+                      <div style={{ height: "100%", borderRadius: 2, width: `${Math.min(val * 100, 100)}%`, background: p.color, transition: "width 0.4s ease" }} />
+                    </div>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: T.text, fontFamily: T.f, width: 36, textAlign: "right", flexShrink: 0 }}>
+                      {isMonitoring && val > 0 ? `${hrvS.tag}` : minsLabel}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Row 4 — Gamification */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {streak > 1 && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 4,
+                  background: isDark ? PILLARS[1].darkSoft : PILLARS[1].soft,
+                  borderRadius: 10, padding: "3px 10px",
+                }}>
+                  <span style={{ fontSize: 11 }}>🔥</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: T.purple, fontFamily: T.f }}>{streak} dní v řadě</span>
+                </div>
+              )}
+              {bestBadge && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 4,
+                  background: isDark ? PILLARS[0].darkSoft : PILLARS[0].soft,
+                  borderRadius: 10, padding: "3px 10px",
+                }}>
+                  <span style={{ fontSize: 11 }}>🏆</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: T.primary, fontFamily: T.f }}>{bestBadge}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -626,7 +815,7 @@ function TheGap({ data, todayData, hrvState, age, onAgeChange, funcAge, onFuncAg
   const monthDays=(monthTotalHrs/24).toFixed(1);
   const untappedYears=(maxProjected-projected).toFixed(1);
   const markers=[];for(let y=Math.ceil(effectiveAge/5)*5;y<=scaleMax;y+=5)if(y>effectiveAge)markers.push(y);
-  const ageDiff = age - effectiveAge;
+  const ageDiff = Math.round((age - effectiveAge) * 10) / 10;
   return (
     <div style={{background:T.card,borderRadius:T.r,padding:"20px 16px 16px",boxShadow:T.shadow}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
@@ -698,15 +887,15 @@ function TheGap({ data, todayData, hrvState, age, onAgeChange, funcAge, onFuncAg
         <div style={{marginBottom:14}}>
           <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0"}}>
             <span style={{fontSize:11,color:T.textTer,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,width:24}}>KV</span>
-            <input type="range" className="age-slider" min="20" max="70" value={age} onChange={e=>onAgeChange(Number(e.target.value))}
+            <input type="range" className="age-slider" min="20" max="70" step="0.1" value={age} onChange={e=>onAgeChange(Number(e.target.value))}
               style={{flex:1,height:18}}/>
-            <span style={{fontSize:16,fontWeight:700,color:T.text,width:28,textAlign:"right",fontFamily:T.f}}>{age}</span>
+            <span style={{fontSize:16,fontWeight:700,color:T.text,width:36,textAlign:"right",fontFamily:T.f}}>{Number(age).toFixed(1)}</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0"}}>
             <span style={{fontSize:11,color:T.green,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,width:24}}>FV</span>
-            <input type="range" className="age-slider" min="20" max="70" value={effectiveAge} onChange={e=>onFuncAgeChange(Number(e.target.value))}
+            <input type="range" className="age-slider" min="20" max="70" step="0.1" value={effectiveAge} onChange={e=>onFuncAgeChange(Number(e.target.value))}
               style={{flex:1,height:18}}/>
-            <span style={{fontSize:16,fontWeight:700,color:T.green,width:28,textAlign:"right",fontFamily:T.f}}>{effectiveAge}</span>
+            <span style={{fontSize:16,fontWeight:700,color:T.green,width:36,textAlign:"right",fontFamily:T.f}}>{Number(effectiveAge).toFixed(1)}</span>
           </div>
           {ageDiff > 0 && (
             <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",
@@ -754,7 +943,7 @@ export default function ElongaHLY() {
   const [darkMode, setDarkMode] = useState(false);
   const T = darkMode ? DARK : LIGHT;
 
-  const [screen, setScreen] = useState("onboarding");
+  const [screen, setScreen] = useState("dashboard");
   const [onbStep, setOnbStep] = useState(0);
   const [onbSetupIdx, setOnbSetupIdx] = useState(0);
   const [onbAnswers, setOnbAnswers] = useState({});
@@ -763,20 +952,69 @@ export default function ElongaHLY() {
   const [selectedOpt, setSelectedOpt] = useState(null);
   const [multiChoices, setMultiChoices] = useState([]);
 
-  const [enabled, setEnabled] = useState({ pohyb: true, spanek: true, strava: false, stres: false, vztahy: false });
+  const [enabled, setEnabled] = useState({ pohyb: true, spanek: true, strava: true, stres: true, vztahy: true });
   const togglePillar = (k) => setEnabled(s => ({ ...s, [k]: !s[k] }));
   const activePillars = PILLARS.filter(p => enabled[p.key] || p.key === "monitoring");
   const selectablePillars = PILLARS.filter(p => p.key !== "monitoring");
 
   const [chartView, setChartView] = useState("radar");
   const [period, setPeriod] = useState("week");
-  const [data, setData] = useState(DEMO);
+  const [data, setData] = useState(null);
   const [hrvState, setHrvState] = useState(1);
   const [animate, setAnimate] = useState(false);
-  const [age, setAge] = useState(40);
-  const [funcAge, setFuncAge] = useState(32);
+  const [age, setAge] = useState(37);
+  const [funcAge, setFuncAge] = useState(null);
   const [celebrated, setCelebrated] = useState(null);
-  const history = useMemo(() => generateHistory(365), []);
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(null);
+
+  // Load real data from API, fall back to demo data on error
+  useEffect(() => {
+    let cancelled = false;
+    async function loadData() {
+      try {
+        const [todayRes, historyRes] = await Promise.all([
+          fetchToday(),
+          fetchHistory(365),
+        ]);
+        if (cancelled) return;
+        setData(todayRes.pillars);
+        setHrvState(todayRes.hrvState);
+        if (todayRes.age) setAge(todayRes.age);
+        if (todayRes.funcAge != null) setFuncAge(todayRes.funcAge);
+
+        // Transform history entries to match expected shape
+        const transformed = historyRes.history.map(entry => {
+          const d = new Date(entry.date + 'T00:00:00');
+          const pillars = entry.pillars;
+          const hrsRaw = PILLARS.reduce((s, p) => s + p.maxMin * (pillars[p.key] || 0), 0) / 60;
+          const hrsBoosted = hrsRaw * HRV_STATES[entry.hrvIdx].mult;
+          return {
+            date: d,
+            day: d.toLocaleDateString("cs-CZ", { weekday: "short" }),
+            dayNum: d.getDate(),
+            month: d.toLocaleDateString("cs-CZ", { month: "short" }),
+            hrsRaw,
+            hrsBoosted,
+            hrvIdx: entry.hrvIdx,
+            pillars,
+          };
+        });
+        setHistory(transformed);
+      } catch (err) {
+        console.error('API failed, using demo data:', err);
+        if (cancelled) return;
+        setApiError(err.message);
+        setData(DEMO);
+        setHistory(generateHistory(365));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    loadData();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => { setTimeout(() => setAnimate(true), 150); }, []);
   useEffect(() => { setAnimate(false); setTimeout(() => setAnimate(true), 50); }, [chartView, period, screen, darkMode]);
@@ -799,11 +1037,12 @@ export default function ElongaHLY() {
   }, [period, history]);
 
   const periodData = useMemo(() => {
-    if (period === "day") return data;
+    const d = data || {};
+    if (period === "day") return d;
     const items = periodItems || [];
-    if (items.length === 0) return data;
+    if (items.length === 0) return d;
     const avg = {};
-    PILLARS.forEach(p => { avg[p.key] = items.reduce((s, d) => s + (d.pillars[p.key] || 0), 0) / items.length; });
+    PILLARS.forEach(p => { avg[p.key] = items.reduce((s, dd) => s + (dd.pillars[p.key] || 0), 0) / items.length; });
     return avg;
   }, [period, data, periodItems]);
 
@@ -1397,6 +1636,21 @@ export default function ElongaHLY() {
   );
 
   // ═══════════════════════════════════════════════
+  // LOADING
+  // ═══════════════════════════════════════════════
+  if (loading) return (
+    <ThemeCtx.Provider value={T}>
+    <div style={{ minHeight: "100vh", background: T.bg, fontFamily: T.f, display: "flex", justifyContent: "center", alignItems: "center" }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: T.text }}>Načítám data…</div>
+        <div style={{ fontSize: 13, color: T.textSec, marginTop: 4 }}>Připojuji se k databázi</div>
+      </div>
+    </div>
+    </ThemeCtx.Provider>
+  );
+
+  // ═══════════════════════════════════════════════
   // DASHBOARD
   // ═══════════════════════════════════════════════
   return (
@@ -1428,6 +1682,11 @@ export default function ElongaHLY() {
           <div style={{fontSize:22,fontWeight:800,color:T.text,letterSpacing:-0.3}}>Healthy Life Years</div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             <DarkModeToggle dark={darkMode} onToggle={() => setDarkMode(!darkMode)} />
+            <button onClick={() => { setOnbStep(0); setScreen("onboarding"); }} title="Onboarding" style={{width:44,height:44,borderRadius:22,background:T.card,
+              boxShadow:T.shadow, border:`1px dashed ${T.textTer}`, cursor:"pointer", opacity:0.5,
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:T.textSec,fontFamily:T.f,fontWeight:600}}>
+              ONB
+            </button>
             <button onClick={() => setScreen("settings")} style={{width:44,height:44,borderRadius:22,background:T.card,
               boxShadow:T.shadow, border:"none", cursor:"pointer",
               display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>
@@ -1568,6 +1827,11 @@ export default function ElongaHLY() {
         <div style={{margin:"8px 16px"}}>
           <BarChartCard history={history} animate={animate}/>
         </div>
+
+        {/* PERIOD SUMMARY — week/month only */}
+        {period!=="day"&&<div style={{margin:"8px 16px"}}>
+          <PeriodSummary history={history} period={period} activePillars={activePillars}/>
+        </div>}
 
         {/* HRV RESILIENCE BOOST */}
         <div style={{margin:"8px 16px",background:T.card,borderRadius:T.r,padding:"14px 16px 12px",boxShadow:T.shadow}}>
