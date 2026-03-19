@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import mysql from 'mysql2/promise';
 import * as Q from './queries.js';
-import { computePillars, getHrvState, buildHistory } from './pillars.js';
+import { computePillars, getHrvState, buildHistory, ageCoefficient, PILLAR_HABITS, HABIT_NAMES, PILLAR_MAX_MIN, pillarMaxVal } from './pillars.js';
 
 const app = express();
 const PORT = process.env.API_PORT || 3001;
@@ -68,7 +68,11 @@ app.get('/api/user/:userId/today', async (req, res) => {
       if (m < 0 || (m === 0 && now.getDate() < bd.getDate())) age--;
     }
 
-    res.json({ pillars, habitCounts, hrvState, readiness, age, funcAge });
+    // Age coefficient: uses functional age if available, otherwise chronological
+    const effectiveAge = funcAge != null ? funcAge : age;
+    const ageCoef = Math.round(ageCoefficient(effectiveAge) * 100) / 100;
+
+    res.json({ pillars, habitCounts, hrvState, readiness, age, funcAge, ageCoef });
   } catch (err) {
     console.error('Error in /today:', err);
     res.status(500).json({ error: err.message });
@@ -103,6 +107,240 @@ app.get('/api/user/:userId/history', async (req, res) => {
     res.json({ history });
   } catch (err) {
     console.error('Error in /history:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Debug endpoint ───
+const HRV_MULTIPLIERS = { 0: 1.0, 1: 1.1, 2: 1.25 };
+const HRV_LABELS = { 0: 'Pod průměrem', 1: 'V normě', 2: 'Nadprůměr' };
+
+app.get('/api/user/:userId/debug', async (req, res) => {
+  const userId = Number(req.params.userId);
+  const date = req.query.date || new Date().toISOString().slice(0, 10);
+
+  // Calculate yesterday's date for activity HRV
+  const dateObj = new Date(date + 'T00:00:00');
+  const yesterdayObj = new Date(dateObj);
+  yesterdayObj.setDate(yesterdayObj.getDate() - 1);
+  const yesterday = yesterdayObj.toISOString().slice(0, 10);
+
+  try {
+    const [
+      [habitRows],
+      [readinessRows],          // Today's readiness (for habits)
+      [yesterdayReadinessRows], // Yesterday's readiness (for activity)
+      [measurementRows],
+      [activityRows],
+      [userRows],
+    ] = await Promise.all([
+      pool.query(Q.HABIT_COMPLETIONS, [userId, date, date]),
+      pool.query(Q.READINESS_VALUES, [userId, date, date]),
+      pool.query(Q.READINESS_VALUES, [userId, yesterday, yesterday]),
+      pool.query(Q.MEASUREMENT_EXISTS, [userId, date, date]),
+      pool.query(Q.ACTIVITY_PLAN_ITEMS, [userId, date, date]),
+      pool.query(Q.USER_PROFILE, [userId]),
+    ]);
+
+    const completedHabitIds = new Set(habitRows.map(r => r.habit_id));
+    const hasMeasurement = measurementRows.length > 0;
+
+    // Activity breakdown
+    const activityItems = activityRows.map(r => ({
+      name: r.name || `Activity ${r.id}`,
+      completed: !!r.completed,
+    }));
+    const activityCompleted = activityItems.filter(a => a.completed).length;
+    const activityTotal = activityItems.length;
+
+    // Calculate age
+    const birthdate = userRows[0]?.birthdate;
+    let age = 37;
+    if (birthdate) {
+      const bd = new Date(birthdate);
+      const now = new Date();
+      age = now.getFullYear() - bd.getFullYear();
+      const m = now.getMonth() - bd.getMonth();
+      if (m < 0 || (m === 0 && now.getDate() < bd.getDate())) age--;
+    }
+
+    // Today's HRV (for habits) - dnešní HRV → včerejší habits
+    const todayReadiness = readinessRows.length > 0 ? readinessRows[readinessRows.length - 1].readiness : null;
+    const todayHrvState = getHrvState(todayReadiness);
+    const todayHrvMult = HRV_MULTIPLIERS[todayHrvState];
+
+    // Yesterday's HRV (for activity) - včerejší HRV → včerejší pohyb
+    const yesterdayReadiness = yesterdayReadinessRows.length > 0 ? yesterdayReadinessRows[yesterdayReadinessRows.length - 1].readiness : null;
+    const yesterdayHrvState = getHrvState(yesterdayReadiness);
+    const yesterdayHrvMult = HRV_MULTIPLIERS[yesterdayHrvState];
+
+    // Func age from today's measurement
+    const lastCA5 = readinessRows.length > 0 ? readinessRows[readinessRows.length - 1].funcAge : null;
+    const funcAge = (lastCA5 != null && lastCA5 > 10 && lastCA5 < 120) ? Math.round(lastCA5 * 10) / 10 : null;
+    const effectiveAge = funcAge != null ? funcAge : age;
+    const ageCoef = ageCoefficient(effectiveAge);
+
+    // Build detailed pillar breakdown
+    const pillarsDebug = {};
+
+    // Pohyb - včerejší HRV → včerejší aktivita
+    // Pravidlo: 4 kcal = 1 min HLY, tj. 1h intenzivního pohybu (~600 kcal) = 150 min = 2.5h HLY
+    const pohybVal = activityTotal > 0 ? Math.min(activityCompleted / activityTotal, 1.0) : 0;
+    const pohybHrsBase = (PILLAR_MAX_MIN.pohyb * pohybVal * ageCoef) / 60;
+    const pohybHrsWithHrv = pohybHrsBase * yesterdayHrvMult;
+    pillarsDebug.pohyb = {
+      label: 'Pohyb',
+      value: pohybVal,
+      percent: Math.round(pohybVal * 100),
+      maxMin: PILLAR_MAX_MIN.pohyb,
+      hours: Math.round(pohybHrsBase * 100) / 100,
+      hoursWithHrv: Math.round(pohybHrsWithHrv * 100) / 100,
+      source: 'activity',
+      hrvApplication: 'yesterday→yesterday',
+      hrvMult: yesterdayHrvMult,
+      hrvState: yesterdayHrvState,
+      hrvLabel: HRV_LABELS[yesterdayHrvState],
+      hrvNote: `Včerejší HRV (${yesterday}) → včerejší pohyb`,
+      activity: { completed: activityCompleted, total: activityTotal, items: activityItems },
+      rule: {
+        description: '4 kcal = 1 min HLY',
+        example: '1h intenzivního pohybu (~600 kcal) = 150 min = 2.5h HLY',
+        maxMinutes: PILLAR_MAX_MIN.pohyb,
+        maxHours: PILLAR_MAX_MIN.pohyb / 60,
+      },
+    };
+
+    // Habit-based pillars
+    for (const [pillar, habitIds] of Object.entries(PILLAR_HABITS)) {
+      const habits = habitIds.map((id, idx) => {
+        const weight = Math.pow(0.5, idx);
+        const completed = completedHabitIds.has(id);
+        return {
+          id,
+          name: HABIT_NAMES[id] || `Habit #${id}`,
+          weight,
+          completed,
+          contribution: completed ? weight : 0,
+        };
+      });
+
+      const weightedSum = habits.reduce((s, h) => s + h.contribution, 0);
+      const maxPossible = pillarMaxVal(habitIds.length);
+      const normalizedVal = maxPossible > 0 ? weightedSum / maxPossible : 0;
+      const maxMin = PILLAR_MAX_MIN[pillar] || 30;
+      const hours = (maxMin * normalizedVal * ageCoef) / 60;
+
+      const hoursWithHrv = hours * todayHrvMult;
+      // Calculate base minutes per habit (before diminishing returns)
+      const baseMinPerHabit = maxMin / maxPossible;
+      pillarsDebug[pillar] = {
+        label: pillar.charAt(0).toUpperCase() + pillar.slice(1),
+        value: normalizedVal,
+        percent: Math.round(normalizedVal * 100),
+        maxMin,
+        hours: Math.round(hours * 100) / 100,
+        hoursWithHrv: Math.round(hoursWithHrv * 100) / 100,
+        source: 'habits',
+        hrvApplication: 'today→yesterday',
+        hrvMult: todayHrvMult,
+        hrvState: todayHrvState,
+        hrvLabel: HRV_LABELS[todayHrvState],
+        hrvNote: `Dnešní HRV (${date}) → včerejší návyky`,
+        habits,
+        calculation: {
+          weightedSum: Math.round(weightedSum * 100) / 100,
+          maxPossible: Math.round(maxPossible * 100) / 100,
+          normalized: Math.round(normalizedVal * 100) / 100,
+        },
+        rule: {
+          description: 'Diminishing returns: každý další návyk má poloviční hodnotu',
+          weights: '1. návyk = 100%, 2. = 50%, 3. = 25%, 4. = 12.5%...',
+          baseMinPerHabit: Math.round(baseMinPerHabit * 100) / 100,
+          example: `1. návyk = ${Math.round(baseMinPerHabit)}min, 2. = ${Math.round(baseMinPerHabit * 0.5)}min`,
+        },
+      };
+    }
+
+    // Monitoring - dnešní HRV → dnešní měření
+    const monitoringVal = hasMeasurement ? 1.0 : 0;
+    const monitoringHrsBase = (PILLAR_MAX_MIN.monitoring * monitoringVal * ageCoef) / 60;
+    const monitoringHrsWithHrv = monitoringHrsBase * todayHrvMult;
+    pillarsDebug.monitoring = {
+      label: 'Monitoring',
+      value: monitoringVal,
+      percent: Math.round(monitoringVal * 100),
+      maxMin: PILLAR_MAX_MIN.monitoring,
+      hours: Math.round(monitoringHrsBase * 100) / 100,
+      hoursWithHrv: Math.round(monitoringHrsWithHrv * 100) / 100,
+      source: 'measurement',
+      hrvApplication: 'today→today',
+      hrvMult: todayHrvMult,
+      hrvState: todayHrvState,
+      hrvLabel: HRV_LABELS[todayHrvState],
+      hrvNote: `Dnešní HRV (${date}) → dnešní měření`,
+      hasMeasurement,
+    };
+
+    // Totals - calculate with breakdown by HRV application
+    const totalHrsWithAge = Object.values(pillarsDebug).reduce((s, p) => s + p.hours, 0);
+    const totalHrsRaw = ageCoef > 0 ? totalHrsWithAge / ageCoef : 0;
+    const totalHrsWithHrv = Object.values(pillarsDebug).reduce((s, p) => s + p.hoursWithHrv, 0);
+
+    // Breakdown:
+    // - Pohyb: včerejší HRV → včerejší pohyb
+    // - Habits + Monitoring: dnešní HRV → včerejší habits / dnešní monitoring
+    const pohybHrs = pillarsDebug.pohyb?.hoursWithHrv || 0;
+    const habitsHrs = ['spanek', 'strava', 'stres', 'vztahy', 'monitoring'].reduce((s, k) => s + (pillarsDebug[k]?.hoursWithHrv || 0), 0);
+
+    res.json({
+      date,
+      user: {
+        age,
+        funcAge,
+        effectiveAge: Math.round(effectiveAge * 10) / 10,
+        ageCoef: Math.round(ageCoef * 100) / 100,
+      },
+      pillars: pillarsDebug,
+      totals: {
+        rawHours: Math.round(totalHrsRaw * 100) / 100,
+        withAgeHours: Math.round(totalHrsWithAge * 100) / 100,
+        withHrvHours: Math.round(totalHrsWithHrv * 100) / 100,
+        ageCoef: Math.round(ageCoef * 100) / 100,
+        formula: `${Math.round(totalHrsRaw * 100) / 100}h × Age(${Math.round(ageCoef * 100) / 100}) + různé HRV = ${Math.round(totalHrsWithHrv * 100) / 100}h`,
+        breakdown: {
+          pohyb: {
+            label: `Včerejší HRV (${HRV_LABELS[yesterdayHrvState]} ×${yesterdayHrvMult}) → pohyb`,
+            hours: Math.round(pohybHrs * 100) / 100,
+            hrvMult: yesterdayHrvMult,
+            hrvState: yesterdayHrvState,
+          },
+          habitsAndMonitoring: {
+            label: `Dnešní HRV (${HRV_LABELS[todayHrvState]} ×${todayHrvMult}) → habits + monitoring`,
+            hours: Math.round(habitsHrs * 100) / 100,
+            hrvMult: todayHrvMult,
+            hrvState: todayHrvState,
+          },
+        },
+      },
+      hrvInfo: {
+        today: {
+          date,
+          state: todayHrvState,
+          label: HRV_LABELS[todayHrvState],
+          multiplier: todayHrvMult,
+          readiness: todayReadiness,
+        },
+        yesterday: {
+          date: yesterday,
+          state: yesterdayHrvState,
+          label: HRV_LABELS[yesterdayHrvState],
+          multiplier: yesterdayHrvMult,
+          readiness: yesterdayReadiness,
+        },
+      },
+    });
+  } catch (err) {
+    console.error('Error in /debug:', err);
     res.status(500).json({ error: err.message });
   }
 });

@@ -1,11 +1,32 @@
 // Pillar computation: maps raw DB data to per-day HLY fractions
 
-// Habit IDs per pillar
-const PILLAR_HABITS = {
+// Habit IDs per pillar (exported for debug)
+export const PILLAR_HABITS = {
   spanek: [8, 9],     // Sleep 7.5h + Blue light
   strava: [3, 265],   // Protein shake + Fasting 16:8
   stres: [325, 851],  // Gratitude + no after-hours work
   vztahy: [20],       // Rodina/partner
+};
+
+// Habit names for debug display
+export const HABIT_NAMES = {
+  8: 'Sleep 7.5h',
+  9: 'Blue light block',
+  3: 'Protein shake',
+  265: 'Fasting 16:8',
+  325: 'Gratitude',
+  851: 'No after-hours work',
+  20: 'Rodina/partner',
+};
+
+// Max minutes per pillar
+export const PILLAR_MAX_MIN = {
+  pohyb: 150,
+  spanek: 90,
+  strava: 90,
+  stres: 45,
+  vztahy: 30,
+  monitoring: 30,
 };
 
 /**
@@ -52,7 +73,8 @@ export function computePillars(todayHabitIds, hasMeasurement, activity) {
       const completed = todayHabitIds.has(id) ? 1 : 0;
       weightedSum += completed * habitWeight(i);
     }
-    pillars[pillar] = weightedSum;
+    const maxPossible = pillarMaxVal(habitIds.length);
+    pillars[pillar] = maxPossible > 0 ? weightedSum / maxPossible : 0;
     habitCounts[pillar] = habitIds.length;
   }
 
@@ -61,6 +83,20 @@ export function computePillars(todayHabitIds, hasMeasurement, activity) {
   habitCounts.monitoring = 1;
 
   return { pillars, habitCounts };
+}
+
+/**
+ * Compute age coefficient for HLY calculation.
+ * At age < 35: coefficient = 1.0 (baseline)
+ * At age 35-44: coefficient = 1.2
+ * At age >= 45: coefficient = 1.5 (max)
+ * @param {number} age - chronological or functional age
+ * @returns {number} coefficient
+ */
+export function ageCoefficient(age) {
+  if (age < 35) return 1.0;
+  if (age < 45) return 1.2;
+  return 1.5;
 }
 
 /**
