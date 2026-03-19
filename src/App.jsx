@@ -1400,7 +1400,7 @@ export default function ElongaHLY() {
   const activePillars = PILLARS.filter(p => enabled[p.key] || p.key === "monitoring");
   const selectablePillars = PILLARS.filter(p => p.key !== "monitoring");
 
-  const [chartView, setChartView] = useState("radar");
+  const [chartView, setChartView] = useState("gauges");
   const [period, setPeriod] = useState("week");
   const [data, setData] = useState(null);
   const [hrvState, setHrvState] = useState(1);
