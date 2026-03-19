@@ -95,16 +95,36 @@ app.get('/api/user/:userId/history', async (req, res) => {
       [readinessRows],
       [measurementRows],
       [activityRows],
+      [userRows],
     ] = await Promise.all([
       pool.query(Q.HABIT_COMPLETIONS, [userId, startStr, endStr]),
       pool.query(Q.READINESS_VALUES, [userId, startStr, endStr]),
       pool.query(Q.MEASUREMENT_EXISTS, [userId, startStr, endStr]),
       pool.query(Q.ACTIVITY_PLAN_ITEMS, [userId, startStr, endStr]),
+      pool.query(Q.USER_PROFILE, [userId]),
     ]);
 
-    const history = buildHistory(habitRows, readinessRows, measurementRows, activityRows, startStr, endStr);
+    // Calculate age from birthdate
+    const birthdate = userRows[0]?.birthdate;
+    let age = 37; // default
+    if (birthdate) {
+      const bd = new Date(birthdate);
+      const now = new Date();
+      age = now.getFullYear() - bd.getFullYear();
+      const m = now.getMonth() - bd.getMonth();
+      if (m < 0 || (m === 0 && now.getDate() < bd.getDate())) age--;
+    }
 
-    res.json({ history });
+    // Get functional age from latest readiness (if available)
+    const lastReadiness = readinessRows.length > 0 ? readinessRows[readinessRows.length - 1] : null;
+    const funcAge = (lastReadiness?.funcAge != null && lastReadiness.funcAge > 10 && lastReadiness.funcAge < 120)
+      ? lastReadiness.funcAge : null;
+    const effectiveAge = funcAge != null ? funcAge : age;
+    const userAgeCoef = ageCoefficient(effectiveAge);
+
+    const history = buildHistory(habitRows, readinessRows, measurementRows, activityRows, startStr, endStr, userAgeCoef);
+
+    res.json({ history, ageCoef: userAgeCoef });
   } catch (err) {
     console.error('Error in /history:', err);
     res.status(500).json({ error: err.message });

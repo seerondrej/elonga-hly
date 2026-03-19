@@ -111,10 +111,15 @@ export function getHrvState(readiness) {
   return 2;
 }
 
+// HRV multipliers matching frontend
+const HRV_MULTIPLIERS = { 0: 1.0, 1: 1.1, 2: 1.25 };
+
 /**
- * Process bulk query results into per-day pillar data
+ * Process bulk query results into per-day pillar data with split HRV logic
+ * - Yesterday's HRV → pohyb (activity)
+ * - Today's HRV → habits + monitoring
  */
-export function buildHistory(habitRows, readinessRows, measurementDays, activityRows, startDate, endDate) {
+export function buildHistory(habitRows, readinessRows, measurementDays, activityRows, startDate, endDate, userAgeCoef = 1.0) {
   // Index habits by day
   const habitsByDay = {};
   for (const row of habitRows) {
@@ -149,19 +154,52 @@ export function buildHistory(habitRows, readinessRows, measurementDays, activity
 
   for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
     const dayStr = d.toISOString().slice(0, 10);
+
+    // Get yesterday's date for activity HRV
+    const yesterday = new Date(d);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
     const todayHabits = habitsByDay[dayStr] || new Set();
     const hasMeasurement = measurementSet.has(dayStr);
     const activity = activityByDay[dayStr] || { completed: 0, total: 0 };
     const { pillars, habitCounts } = computePillars(todayHabits, hasMeasurement, activity);
-    const readiness = readinessByDay[dayStr] ?? null;
-    const hrvState = getHrvState(readiness);
+
+    // Today's HRV (for habits + monitoring)
+    const todayReadiness = readinessByDay[dayStr] ?? null;
+    const todayHrvState = getHrvState(todayReadiness);
+    const todayHrvMult = HRV_MULTIPLIERS[todayHrvState];
+
+    // Yesterday's HRV (for pohyb)
+    const yesterdayReadiness = readinessByDay[yesterdayStr] ?? null;
+    const yesterdayHrvState = getHrvState(yesterdayReadiness);
+    const yesterdayHrvMult = HRV_MULTIPLIERS[yesterdayHrvState];
+
+    // Calculate hours with split HRV logic
+    // Pohyb: uses yesterday's HRV
+    const pohybRaw = (PILLAR_MAX_MIN.pohyb * (pillars.pohyb || 0)) / 60;
+    const pohybBoosted = pohybRaw * userAgeCoef * yesterdayHrvMult;
+
+    // Habits + Monitoring: use today's HRV
+    const habitsRaw = ['spanek', 'strava', 'stres', 'vztahy', 'monitoring'].reduce((sum, key) => {
+      return sum + (PILLAR_MAX_MIN[key] * (pillars[key] || 0)) / 60;
+    }, 0);
+    const habitsBoosted = habitsRaw * userAgeCoef * todayHrvMult;
+
+    const hrsRaw = pohybRaw + habitsRaw;
+    const hrsBoosted = pohybBoosted + habitsBoosted;
 
     history.push({
       date: dayStr,
       pillars,
       habitCounts,
-      hrvIdx: hrvState,
-      readiness,
+      hrvIdx: todayHrvState,
+      readiness: todayReadiness,
+      // New fields with correct split HRV calculation
+      hrsRaw: Math.round(hrsRaw * 100) / 100,
+      hrsBoosted: Math.round(hrsBoosted * 100) / 100,
+      // Additional HRV info
+      yesterdayHrvIdx: yesterdayHrvState,
     });
   }
 

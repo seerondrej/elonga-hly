@@ -1431,23 +1431,18 @@ export default function ElongaHLY() {
         if (todayRes.funcAge != null) setFuncAge(todayRes.funcAge);
         if (todayRes.ageCoef != null) setAgeCoef(todayRes.ageCoef);
 
-        // Transform history entries to match expected shape
-        // Use age coefficient from API response
-        const historyAgeCoef = todayRes.ageCoef || calcAgeCoef(todayRes.funcAge ?? todayRes.age ?? 37);
+        // Transform history entries - use server-calculated values with split HRV logic
         const transformed = historyRes.history.map(entry => {
           const d = new Date(entry.date + 'T00:00:00');
-          const pillars = entry.pillars;
-          const hrsRaw = PILLARS.reduce((s, p) => s + p.maxMin * (pillars[p.key] || 0), 0) / 60;
-          const hrsBoosted = hrsRaw * HRV_STATES[entry.hrvIdx].mult * historyAgeCoef;
           return {
             date: d,
             day: d.toLocaleDateString("cs-CZ", { weekday: "short" }),
             dayNum: d.getDate(),
             month: d.toLocaleDateString("cs-CZ", { month: "short" }),
-            hrsRaw,
-            hrsBoosted,
+            hrsRaw: entry.hrsRaw,
+            hrsBoosted: entry.hrsBoosted,
             hrvIdx: entry.hrvIdx,
-            pillars,
+            pillars: entry.pillars,
           };
         });
         setHistory(transformed);
