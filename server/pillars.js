@@ -87,15 +87,15 @@ export function computePillars(todayHabitIds, hasMeasurement, activity) {
 
 /**
  * Compute age coefficient for HLY calculation.
- * At age < 35: coefficient = 1.0 (baseline)
- * At age 35-44: coefficient = 1.2
- * At age >= 45: coefficient = 1.5 (max)
+ * At age < 45: coefficient = 1.0 (baseline)
+ * At age 45-54: coefficient = 1.2
+ * At age >= 55: coefficient = 1.5 (max)
  * @param {number} age - chronological or functional age
  * @returns {number} coefficient
  */
 export function ageCoefficient(age) {
-  if (age < 35) return 1.0;
-  if (age < 45) return 1.2;
+  if (age < 45) return 1.0;
+  if (age < 55) return 1.2;
   return 1.5;
 }
 

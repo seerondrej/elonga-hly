@@ -60,7 +60,7 @@ const HRV_STATES = [
 const DEMO = { pohyb: 0.72, spanek: 0.85, strava: 0.55, stres: 0.05, vztahy: 0.65, monitoring: 1.0 };
 
 // Age coefficient: <35 = 1.0, 35-44 = 1.2, >=45 = 1.5 (max)
-const calcAgeCoef = (age) => age < 35 ? 1.0 : age < 45 ? 1.2 : 1.5;
+const calcAgeCoef = (age) => age < 45 ? 1.0 : age < 55 ? 1.2 : 1.5;
 
 const PILLAR_META = {
   pohyb: { desc: "Fyzická aktivita, kroky, tréninky", source: "Apple Health / Google Fit + manuálně", question: "Jak chceš zadávat pohyb?", options: [
@@ -1255,9 +1255,9 @@ function DebugPanel({ userId, onClose }) {
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: T.purple, marginBottom: 6 }}>Věkový koeficient</div>
                   <div style={{ fontSize: 11, color: T.textSec, lineHeight: 1.5 }}>
-                    <div>• Věk &lt; 35 let: <strong>×1.0</strong></div>
-                    <div>• Věk 35-44 let: <strong>×1.2</strong></div>
-                    <div>• Věk ≥ 45 let: <strong>×1.5</strong></div>
+                    <div>• Věk &lt; 45 let: <strong>×1.0</strong></div>
+                    <div>• Věk 45-54 let: <strong>×1.2</strong></div>
+                    <div>• Věk ≥ 55 let: <strong>×1.5</strong></div>
                     <div style={{ color: T.textTer, marginTop: 4, fontSize: 10 }}>
                       Používá se funkční věk (z HRV měření) pokud je dostupný, jinak chronologický věk.
                     </div>
