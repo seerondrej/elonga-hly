@@ -237,22 +237,21 @@ function ActivityRings({ data, pillars, animate, periodTotal, ageCoef = 1 }) {
   const T = useTheme();
   const isDark = T === DARK;
   const n = pillars.length;
-  const sw = 10; const ringGap = 4;
+  const sw = 14; const ringGap = 6;
   const step = sw + ringGap;
   const totalRingSpace = n * sw + (n - 1) * ringGap;
-  const outerR = totalRingSpace + 24;
-  const size = (outerR + sw / 2 + 8) * 2;
+  const outerR = totalRingSpace + 8;
+  const size = (outerR + sw / 2 + 4) * 2;
   const cx = size / 2; const cy = size / 2;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "4px 0" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 24, padding: "12px 0" }}>
+      {/* Rings - clean, no text in center */}
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         {pillars.map((p, idx) => {
-          const val = data[p.key] || 0; // Allow >1 for overflow
+          const val = data[p.key] || 0;
           const r = outerR - (idx * step);
           const circ = 2 * Math.PI * r;
-
-          // Calculate how many full circles + remainder
           const fullCircles = Math.floor(val);
           const remainder = val - fullCircles;
 
@@ -260,23 +259,21 @@ function ActivityRings({ data, pillars, animate, periodTotal, ageCoef = 1 }) {
             <g key={p.key}>
               {/* Background track */}
               <circle cx={cx} cy={cy} r={r} fill="none"
-                stroke={isDark ? (p.darkSoft || p.soft) : p.soft} strokeWidth={sw} opacity={0.4} />
+                stroke={isDark ? (p.darkSoft || p.soft) : p.soft} strokeWidth={sw} opacity={0.5} />
 
-              {/* Start indicator - small bright segment at 12 o'clock */}
+              {/* Start indicator at 12 o'clock */}
               <circle cx={cx} cy={cy} r={r} fill="none"
                 stroke={p.color} strokeWidth={sw} strokeLinecap="round"
-                strokeDasharray={`${sw * 0.8} ${circ}`}
+                strokeDasharray={`${sw * 0.4} ${circ}`}
                 transform={`rotate(-90 ${cx} ${cy})`}
-                opacity={0.3} />
+                opacity={0.5} />
 
-              {/* Full circles (for >100%) - slightly transparent overlay */}
+              {/* Full circles for >100% */}
               {Array.from({ length: Math.min(fullCircles, 3) }).map((_, i) => (
                 <circle key={i} cx={cx} cy={cy} r={r} fill="none"
                   stroke={p.color} strokeWidth={sw}
-                  opacity={0.3 + (i * 0.15)}
-                  style={{
-                    transition: animate ? `opacity 0.5s ease ${idx * 100 + i * 200}ms` : 'none',
-                  }} />
+                  opacity={0.25 + (i * 0.15)}
+                  style={{ transition: animate ? `opacity 0.5s ease ${idx * 100 + i * 200}ms` : 'none' }} />
               ))}
 
               {/* Progress arc */}
@@ -288,56 +285,46 @@ function ActivityRings({ data, pillars, animate, periodTotal, ageCoef = 1 }) {
                 style={{
                   transition: `stroke-dashoffset 1s cubic-bezier(0.34,1.56,0.64,1)`,
                   transitionDelay: `${idx * 100}ms`,
-                  filter: val >= 1 ? `drop-shadow(0 0 3px ${p.color})` : 'none',
+                  filter: val >= 1 ? `drop-shadow(0 0 4px ${p.color})` : 'none',
                 }} />
 
-              {/* End cap glow for completed rings */}
+              {/* End cap glow */}
               {val >= 1 && (
-                <circle
-                  cx={cx}
-                  cy={cy - r}
-                  r={sw / 2 + 1}
-                  fill={p.color}
-                  opacity={animate ? 0.6 : 0}
-                  style={{
-                    transition: 'opacity 0.5s ease',
-                    transitionDelay: `${idx * 100 + 800}ms`,
-                  }}
-                />
+                <circle cx={cx} cy={cy - r} r={sw / 2 + 2} fill={p.color}
+                  opacity={animate ? 0.8 : 0}
+                  style={{ transition: 'opacity 0.5s ease', transitionDelay: `${idx * 100 + 800}ms` }} />
               )}
             </g>
           );
         })}
-
-        {/* Center value */}
-        <text x={cx} y={cy - 4} textAnchor="middle" dominantBaseline="central"
-          fill={T.primary} fontSize="26" fontWeight="800" fontFamily={T.f}>
-          {periodTotal.hrs}
-        </text>
-        <text x={cx} y={cy + 18} textAnchor="middle" dominantBaseline="central"
-          fill={T.textSec} fontSize="10" fontWeight="600" fontFamily={T.f}>
-          {periodTotal.label}
-        </text>
       </svg>
 
-      {/* Legend */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: 8 }}>
+      {/* Stats on the right side */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 110 }}>
+        {/* Total */}
+        <div style={{ marginBottom: 10, paddingBottom: 10, borderBottom: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: 36, fontWeight: 800, color: T.primary, fontFamily: T.f, lineHeight: 1 }}>
+            {periodTotal.hrs}
+          </div>
+          <div style={{ fontSize: 11, color: T.textTer, fontFamily: T.f, marginTop: 2 }}>{periodTotal.label}</div>
+        </div>
+
+        {/* Pillar breakdown */}
         {pillars.map(p => {
           const val = data[p.key] || 0;
           const hrs = (val * p.maxMin * ageCoef / 60).toFixed(1);
           const isOver = val > 1;
+          const pct = Math.round(val * 100);
           return (
-            <div key={p.key} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <div key={p.key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{
-                width: 10, height: 10, borderRadius: 5, background: p.color,
+                width: 10, height: 10, borderRadius: 5, background: p.color, flexShrink: 0,
                 boxShadow: isOver ? `0 0 6px ${p.color}` : 'none',
               }} />
-              <span style={{ fontSize: 11, fontWeight: 600, color: T.textSec, fontFamily: T.f }}>{p.label}</span>
+              <span style={{ fontSize: 11, color: T.textSec, fontFamily: T.f, flex: 1 }}>{p.label}</span>
               <span style={{
-                fontSize: 11, fontWeight: 700, color: p.color, fontFamily: T.f,
-                background: isOver ? (isDark ? p.darkSoft : p.soft) : 'transparent',
-                padding: isOver ? '1px 5px' : 0, borderRadius: 8,
-              }}>{hrs}h{isOver && ' 🔥'}</span>
+                fontSize: 12, fontWeight: 700, color: isOver ? p.color : T.text, fontFamily: T.f,
+              }}>{hrs}h</span>
             </div>
           );
         })}
