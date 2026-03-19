@@ -233,59 +233,111 @@ function GaugeGrid({ data, pillars, animate, periodDays=1, ageCoef=1 }) {
 // ═══════════════════════════════════════════════════
 // ACTIVITY RINGS (Apple Watch style)
 // ═══════════════════════════════════════════════════
-function ActivityRings({ data, pillars, animate, periodTotal }) {
+function ActivityRings({ data, pillars, animate, periodTotal, ageCoef = 1 }) {
   const T = useTheme();
   const isDark = T === DARK;
-  const n=pillars.length;
-  const sw=7;const ringGap=2;
-  const step=sw+ringGap;
-  const totalRingSpace=n*sw+(n-1)*ringGap;
-  const outerR=totalRingSpace+20;
-  const size=(outerR+sw/2+4)*2;
-  const cx=size/2;const cy=size/2;
+  const n = pillars.length;
+  const sw = 10; const ringGap = 4;
+  const step = sw + ringGap;
+  const totalRingSpace = n * sw + (n - 1) * ringGap;
+  const outerR = totalRingSpace + 24;
+  const size = (outerR + sw / 2 + 8) * 2;
+  const cx = size / 2; const cy = size / 2;
+
   return (
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"4px 0"}}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "4px 0" }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {pillars.map((p,idx)=>{
-          const val=Math.min(data[p.key]||0,1);
-          const r=outerR-(idx*step);
-          const circ=2*Math.PI*r;
-          const filled=circ*val;
+        {pillars.map((p, idx) => {
+          const val = data[p.key] || 0; // Allow >1 for overflow
+          const r = outerR - (idx * step);
+          const circ = 2 * Math.PI * r;
+
+          // Calculate how many full circles + remainder
+          const fullCircles = Math.floor(val);
+          const remainder = val - fullCircles;
+
           return (
             <g key={p.key}>
+              {/* Background track */}
               <circle cx={cx} cy={cy} r={r} fill="none"
-                stroke={isDark?(p.darkSoft||p.soft):p.soft} strokeWidth={sw}/>
+                stroke={isDark ? (p.darkSoft || p.soft) : p.soft} strokeWidth={sw} opacity={0.4} />
+
+              {/* Start indicator - small bright segment at 12 o'clock */}
+              <circle cx={cx} cy={cy} r={r} fill="none"
+                stroke={p.color} strokeWidth={sw} strokeLinecap="round"
+                strokeDasharray={`${sw * 0.8} ${circ}`}
+                transform={`rotate(-90 ${cx} ${cy})`}
+                opacity={0.3} />
+
+              {/* Full circles (for >100%) - slightly transparent overlay */}
+              {Array.from({ length: Math.min(fullCircles, 3) }).map((_, i) => (
+                <circle key={i} cx={cx} cy={cy} r={r} fill="none"
+                  stroke={p.color} strokeWidth={sw}
+                  opacity={0.3 + (i * 0.15)}
+                  style={{
+                    transition: animate ? `opacity 0.5s ease ${idx * 100 + i * 200}ms` : 'none',
+                  }} />
+              ))}
+
+              {/* Progress arc */}
               <circle cx={cx} cy={cy} r={r} fill="none"
                 stroke={p.color} strokeWidth={sw} strokeLinecap="round"
                 strokeDasharray={circ}
-                strokeDashoffset={animate?circ-filled:circ}
+                strokeDashoffset={animate ? circ - (circ * Math.min(remainder || val, 1)) : circ}
                 transform={`rotate(-90 ${cx} ${cy})`}
                 style={{
-                  transition:`stroke-dashoffset 1.2s cubic-bezier(0.34,1.56,0.64,1)`,
-                  transitionDelay:`${idx*100}ms`,
-                }}/>
+                  transition: `stroke-dashoffset 1s cubic-bezier(0.34,1.56,0.64,1)`,
+                  transitionDelay: `${idx * 100}ms`,
+                  filter: val >= 1 ? `drop-shadow(0 0 3px ${p.color})` : 'none',
+                }} />
+
+              {/* End cap glow for completed rings */}
+              {val >= 1 && (
+                <circle
+                  cx={cx}
+                  cy={cy - r}
+                  r={sw / 2 + 1}
+                  fill={p.color}
+                  opacity={animate ? 0.6 : 0}
+                  style={{
+                    transition: 'opacity 0.5s ease',
+                    transitionDelay: `${idx * 100 + 800}ms`,
+                  }}
+                />
+              )}
             </g>
           );
         })}
+
         {/* Center value */}
-        <text x={cx} y={cy-2} textAnchor="middle" dominantBaseline="central"
-          fill={T.text} fontSize="22" fontWeight="800" fontFamily={T.f}>
+        <text x={cx} y={cy - 4} textAnchor="middle" dominantBaseline="central"
+          fill={T.primary} fontSize="26" fontWeight="800" fontFamily={T.f}>
           {periodTotal.hrs}
         </text>
-        <text x={cx} y={cy+16} textAnchor="middle" dominantBaseline="central"
-          fill={T.textSec} fontSize="9" fontWeight="500" fontFamily={T.f}>
+        <text x={cx} y={cy + 18} textAnchor="middle" dominantBaseline="central"
+          fill={T.textSec} fontSize="10" fontWeight="600" fontFamily={T.f}>
           {periodTotal.label}
         </text>
       </svg>
-      <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center",marginTop:4}}>
-        {pillars.map(p=>{
-          const val=Math.min(data[p.key]||0,1);
-          const hrs=(val*p.maxMin/60).toFixed(1);
+
+      {/* Legend */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: 8 }}>
+        {pillars.map(p => {
+          const val = data[p.key] || 0;
+          const hrs = (val * p.maxMin * ageCoef / 60).toFixed(1);
+          const isOver = val > 1;
           return (
-            <div key={p.key} style={{display:"flex",alignItems:"center",gap:3}}>
-              <div style={{width:7,height:7,borderRadius:4,background:p.color}}/>
-              <span style={{fontSize:10,fontWeight:600,color:T.textSec,fontFamily:T.f}}>{p.label}</span>
-              <span style={{fontSize:10,fontWeight:700,color:p.color,fontFamily:T.f}}>{hrs}h</span>
+            <div key={p.key} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <div style={{
+                width: 10, height: 10, borderRadius: 5, background: p.color,
+                boxShadow: isOver ? `0 0 6px ${p.color}` : 'none',
+              }} />
+              <span style={{ fontSize: 11, fontWeight: 600, color: T.textSec, fontFamily: T.f }}>{p.label}</span>
+              <span style={{
+                fontSize: 11, fontWeight: 700, color: p.color, fontFamily: T.f,
+                background: isOver ? (isDark ? p.darkSoft : p.soft) : 'transparent',
+                padding: isOver ? '1px 5px' : 0, borderRadius: 8,
+              }}>{hrs}h{isOver && ' 🔥'}</span>
             </div>
           );
         })}
@@ -2192,7 +2244,7 @@ export default function ElongaHLY() {
           </div>
           <div style={{display:"flex",justifyContent:"center",position:"relative"}}>
             {chartView==="radar"&&<RadarChart data={periodData} pillars={activePillars} animate={animate}/>}
-            {chartView==="rings"&&<ActivityRings data={periodData} pillars={activePillars} animate={animate} periodTotal={periodTotal}/>}
+            {chartView==="rings"&&<ActivityRings data={periodData} pillars={activePillars} animate={animate} periodTotal={periodTotal} ageCoef={mainAgeCoef}/>}
             {chartView==="gauges"&&<GaugeGrid data={periodData} pillars={activePillars} animate={animate} periodDays={periodTotal.days} ageCoef={mainAgeCoef}/>}
             {chartView==="radar"&&<div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%, -50%)",textAlign:"center",pointerEvents:"none"}}>
               <div style={{fontSize:30,fontWeight:800,color:T.text,lineHeight:1}}>{periodTotal.hrs}</div>
