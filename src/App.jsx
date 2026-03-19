@@ -342,7 +342,19 @@ function BarChartCard({ history, animate }) {
 
   const items = barPeriod === "day" ? dayItems : barPeriod === "week" ? weekItems : monthItems;
   const sel = selected === null || selected >= items.length ? items.length - 1 : selected;
-  const maxH = 6; const chartH = 120;
+
+  // Dynamic max based on actual data (with 10% headroom)
+  const dataMax = useMemo(() => {
+    if (barPeriod === "day") {
+      return Math.max(...dayItems.map(d => d.hrsBoosted), 6);
+    } else if (barPeriod === "week") {
+      return Math.max(...weekItems.map(w => w.avg), 6);
+    } else {
+      return Math.max(...monthItems.map(m => m.avg), 6);
+    }
+  }, [barPeriod, dayItems, weekItems, monthItems]);
+  const maxH = dataMax * 1.1; // 10% headroom
+  const chartH = 120;
   const barW = barPeriod === "day" ? 24 : barPeriod === "week" ? 36 : 36;
   const gap = barPeriod === "day" ? 4 : 8;
 

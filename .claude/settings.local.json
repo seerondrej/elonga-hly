@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(mysql:*)",
+      "Bash(node -e \"\nimport ''dotenv/config'';\nimport mysql from ''mysql2/promise'';\nconst pool = mysql.createPool\\({ host: process.env.DB_HOST, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME, port: 3306 }\\);\n\nconst tables = [''measurement_store'', ''measurement_store_relative_values'', ''app_users_physical_activity_plans'', ''app_users_physical_activity_plan_items'', ''app_users''];\nfor \\(const t of tables\\) {\n  const [cols] = await pool.query\\(''DESCRIBE '' + t\\);\n  console.log\\(t + '':''\\);\n  cols.forEach\\(c => console.log\\(''  '', c.Field, c.Type\\)\\);\n  console.log\\(''''\\);\n}\npool.end\\(\\);\n\")",
+      "Bash(curl:*)",
+      "Bash(node:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}

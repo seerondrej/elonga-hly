@@ -1,11 +1,15 @@
 import 'dotenv/config';
 import express from 'express';
+import cors from 'cors';
 import mysql from 'mysql2/promise';
 import * as Q from './queries.js';
 import { computePillars, getHrvState, buildHistory, ageCoefficient, PILLAR_HABITS, HABIT_NAMES, PILLAR_MAX_MIN, pillarMaxVal } from './pillars.js';
 
 const app = express();
-const PORT = process.env.API_PORT || 3001;
+const PORT = process.env.PORT || process.env.API_PORT || 3001;
+
+// CORS - allow frontend from any origin
+app.use(cors());
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
