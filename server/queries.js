@@ -5,15 +5,14 @@ export const USER_PROFILE = `
   SELECT birthdate FROM app_users WHERE id = ?
 `;
 
-// Habit completions in date range — presence of row = completed
+// All habit completions in date range (dynamic, no hardcoded filter)
 export const HABIT_COMPLETIONS = `
   SELECT habit_id, DATE_FORMAT(date, '%Y-%m-%d') as day
   FROM user_habit_completion
   WHERE user_id = ? AND DATE(date) BETWEEN ? AND ?
-  AND habit_id IN (8, 9, 3, 265, 325, 851, 20)
 `;
 
-// All user's favorite habits with names and categories (for debug display)
+// All user's favorite habits with names and categories
 export const USER_HABITS_WITH_NAMES = `
   SELECT hf.habit_id, hf.color,
     COALESCE(htcs.habit_name, hten.habit_name, CONCAT('Habit #', hf.habit_id)) as habit_name,
@@ -26,13 +25,6 @@ export const USER_HABITS_WITH_NAMES = `
   LEFT JOIN habit_category_translation hct ON hct.category_id = h.category_id AND hct.language = 'cs'
   WHERE hf.user_id = ?
   ORDER BY h.category_id, hf.created_at
-`;
-
-// All habit completions in date range (no filter on habit_id)
-export const ALL_HABIT_COMPLETIONS = `
-  SELECT habit_id, DATE_FORMAT(date, '%Y-%m-%d') as day
-  FROM user_habit_completion
-  WHERE user_id = ? AND DATE(date) BETWEEN ? AND ?
 `;
 
 // HRV readiness values in date range (JOIN measurement_store + relative_values)
@@ -51,11 +43,11 @@ export const MEASUREMENT_EXISTS = `
   WHERE usersId = ? AND DATE(date) BETWEEN ? AND ?
 `;
 
-// User's weekly goals per habit
+// User's weekly goals per habit (dynamic)
 export const HABIT_WEEKLY_GOALS = `
   SELECT habit_id, users_weekly_goal
   FROM habit_favorite
-  WHERE user_id = ? AND habit_id IN (8, 9, 3, 265, 325, 851, 20)
+  WHERE user_id = ?
 `;
 
 // Activity plan items in date range

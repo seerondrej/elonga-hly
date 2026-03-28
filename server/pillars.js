@@ -1,22 +1,11 @@
 // Pillar computation: maps raw DB data to per-day HLY fractions
 
-// Habit IDs per pillar (exported for debug)
-export const PILLAR_HABITS = {
-  spanek: [8, 9],     // Sleep 7.5h + Blue light
-  strava: [3, 265],   // Protein shake + Fasting 16:8
-  stres: [325, 851],  // Gratitude + no after-hours work
-  vztahy: [20],       // Rodina/partner
-};
-
-// Habit names for debug display
-export const HABIT_NAMES = {
-  8: 'Sleep 7.5h',
-  9: 'Blue light block',
-  3: 'Protein shake',
-  265: 'Fasting 16:8',
-  325: 'Gratitude',
-  851: 'No after-hours work',
-  20: 'Rodina/partner',
+// DB category_id → pillar key mapping
+export const CATEGORY_TO_PILLAR = {
+  2: 'strava',
+  3: 'spanek',
+  4: 'stres',
+  5: 'vztahy',
 };
 
 // Max minutes per pillar
@@ -49,15 +38,34 @@ export function pillarMaxVal(habitCount) {
 }
 
 /**
+ * Build dynamic pillar habits mapping from user's DB habits.
+ * Groups habit_ids by pillar based on their category_id.
+ *
+ * @param {Array<{habit_id: number, category_id: number}>} userHabits - user's habits with categories
+ * @returns {Object<string, number[]>} pillar key → array of habit IDs
+ */
+export function buildPillarHabits(userHabits) {
+  const pillarHabits = {};
+  for (const h of userHabits) {
+    const pillar = CATEGORY_TO_PILLAR[h.category_id];
+    if (!pillar) continue; // skip "Moje návyky" (category_id 1) and unknown
+    if (!pillarHabits[pillar]) pillarHabits[pillar] = [];
+    pillarHabits[pillar].push(h.habit_id);
+  }
+  return pillarHabits;
+}
+
+/**
  * Compute pillar values for a SINGLE DAY based on which habits were completed that day.
  * Uses geometric weighting: 1st habit = full value, 2nd = 50%, 3rd = 25%, etc.
  *
  * @param {Set<number>} todayHabitIds - set of habit IDs completed TODAY
  * @param {boolean} hasMeasurement - whether an HRV measurement exists today
  * @param {{ completed: number, total: number }} activity - activity plan item counts for today
+ * @param {Object<string, number[]>} pillarHabits - dynamic pillar→habitIds mapping
  * @returns {{ pillars: Object, habitCounts: Object }}
  */
-export function computePillars(todayHabitIds, hasMeasurement, activity) {
+export function computePillars(todayHabitIds, hasMeasurement, activity, pillarHabits) {
   const pillars = {};
   const habitCounts = {};
 
@@ -66,7 +74,7 @@ export function computePillars(todayHabitIds, hasMeasurement, activity) {
   habitCounts.pohyb = 1;
 
   // Habit-based pillars: geometric weighting, daily check
-  for (const [pillar, habitIds] of Object.entries(PILLAR_HABITS)) {
+  for (const [pillar, habitIds] of Object.entries(pillarHabits)) {
     let weightedSum = 0;
     for (let i = 0; i < habitIds.length; i++) {
       const id = habitIds[i];
@@ -76,6 +84,14 @@ export function computePillars(todayHabitIds, hasMeasurement, activity) {
     const maxPossible = pillarMaxVal(habitIds.length);
     pillars[pillar] = maxPossible > 0 ? weightedSum / maxPossible : 0;
     habitCounts[pillar] = habitIds.length;
+  }
+
+  // Ensure all standard pillars exist (even if user has no habits in that category)
+  for (const key of ['spanek', 'strava', 'stres', 'vztahy']) {
+    if (!(key in pillars)) {
+      pillars[key] = 0;
+      habitCounts[key] = 0;
+    }
   }
 
   // Monitoring: 1 if HRV measurement exists, 0 otherwise
@@ -119,7 +135,7 @@ const HRV_MULTIPLIERS = { 0: 1.0, 1: 1.1, 2: 1.25 };
  * - Yesterday's HRV → pohyb (activity)
  * - Today's HRV → habits + monitoring
  */
-export function buildHistory(habitRows, readinessRows, measurementDays, activityRows, startDate, endDate, userAgeCoef = 1.0) {
+export function buildHistory(habitRows, readinessRows, measurementDays, activityRows, startDate, endDate, userAgeCoef = 1.0, pillarHabits = {}) {
   // Index habits by day
   const habitsByDay = {};
   for (const row of habitRows) {
@@ -163,7 +179,7 @@ export function buildHistory(habitRows, readinessRows, measurementDays, activity
     const todayHabits = habitsByDay[dayStr] || new Set();
     const hasMeasurement = measurementSet.has(dayStr);
     const activity = activityByDay[dayStr] || { completed: 0, total: 0 };
-    const { pillars, habitCounts } = computePillars(todayHabits, hasMeasurement, activity);
+    const { pillars, habitCounts } = computePillars(todayHabits, hasMeasurement, activity, pillarHabits);
 
     // Today's HRV (for habits + monitoring)
     const todayReadiness = readinessByDay[dayStr] ?? null;
@@ -195,10 +211,8 @@ export function buildHistory(habitRows, readinessRows, measurementDays, activity
       habitCounts,
       hrvIdx: todayHrvState,
       readiness: todayReadiness,
-      // New fields with correct split HRV calculation
       hrsRaw: Math.round(hrsRaw * 100) / 100,
       hrsBoosted: Math.round(hrsBoosted * 100) / 100,
-      // Additional HRV info
       yesterdayHrvIdx: yesterdayHrvState,
     });
   }

@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import mysql from 'mysql2/promise';
 import * as Q from './queries.js';
-import { computePillars, getHrvState, buildHistory, ageCoefficient, PILLAR_HABITS, HABIT_NAMES, PILLAR_MAX_MIN, pillarMaxVal } from './pillars.js';
+import { computePillars, getHrvState, buildHistory, ageCoefficient, buildPillarHabits, CATEGORY_TO_PILLAR, PILLAR_MAX_MIN, pillarMaxVal } from './pillars.js';
 
 const app = express();
 const PORT = process.env.PORT || process.env.API_PORT || 3001;
@@ -39,14 +39,17 @@ app.get('/api/user/:userId/today', async (req, res) => {
       [measurementRows],
       [activityRows],
       [userRows],
+      [userHabitsRows],
     ] = await Promise.all([
       pool.query(Q.HABIT_COMPLETIONS, [userId, today, today]),
       pool.query(Q.READINESS_VALUES, [userId, today, today]),
       pool.query(Q.MEASUREMENT_EXISTS, [userId, today, today]),
       pool.query(Q.ACTIVITY_PLAN_ITEMS, [userId, today, today]),
       pool.query(Q.USER_PROFILE, [userId]),
+      pool.query(Q.USER_HABITS_WITH_NAMES, [userId]),
     ]);
 
+    const pillarHabits = buildPillarHabits(userHabitsRows);
     const todayHabitIds = new Set(habitRows.map(r => r.habit_id));
     const hasMeasurement = measurementRows.length > 0;
     const activity = { completed: 0, total: 0 };
@@ -55,7 +58,7 @@ app.get('/api/user/:userId/today', async (req, res) => {
       if (row.completed) activity.completed++;
     }
 
-    const { pillars, habitCounts } = computePillars(todayHabitIds, hasMeasurement, activity);
+    const { pillars, habitCounts } = computePillars(todayHabitIds, hasMeasurement, activity, pillarHabits);
     const readiness = readinessRows.length > 0 ? readinessRows[readinessRows.length - 1].readiness : null;
     const hrvState = getHrvState(readiness);
     const lastCA5 = readinessRows.length > 0 ? readinessRows[readinessRows.length - 1].funcAge : null;
@@ -100,13 +103,17 @@ app.get('/api/user/:userId/history', async (req, res) => {
       [measurementRows],
       [activityRows],
       [userRows],
+      [userHabitsRows],
     ] = await Promise.all([
       pool.query(Q.HABIT_COMPLETIONS, [userId, startStr, endStr]),
       pool.query(Q.READINESS_VALUES, [userId, startStr, endStr]),
       pool.query(Q.MEASUREMENT_EXISTS, [userId, startStr, endStr]),
       pool.query(Q.ACTIVITY_PLAN_ITEMS, [userId, startStr, endStr]),
       pool.query(Q.USER_PROFILE, [userId]),
+      pool.query(Q.USER_HABITS_WITH_NAMES, [userId]),
     ]);
+
+    const pillarHabits = buildPillarHabits(userHabitsRows);
 
     // Calculate age from birthdate
     const birthdate = userRows[0]?.birthdate;
@@ -126,7 +133,7 @@ app.get('/api/user/:userId/history', async (req, res) => {
     const effectiveAge = funcAge != null ? funcAge : age;
     const userAgeCoef = ageCoefficient(effectiveAge);
 
-    const history = buildHistory(habitRows, readinessRows, measurementRows, activityRows, startStr, endStr, userAgeCoef);
+    const history = buildHistory(habitRows, readinessRows, measurementRows, activityRows, startStr, endStr, userAgeCoef, pillarHabits);
 
     res.json({ history, ageCoef: userAgeCoef });
   } catch (err) {
@@ -157,7 +164,6 @@ app.get('/api/user/:userId/debug', async (req, res) => {
       [measurementRows],
       [activityRows],
       [userRows],
-      [allHabitCompletions],
       [userHabitsRows],
     ] = await Promise.all([
       pool.query(Q.HABIT_COMPLETIONS, [userId, date, date]),
@@ -166,10 +172,10 @@ app.get('/api/user/:userId/debug', async (req, res) => {
       pool.query(Q.MEASUREMENT_EXISTS, [userId, date, date]),
       pool.query(Q.ACTIVITY_PLAN_ITEMS, [userId, date, date]),
       pool.query(Q.USER_PROFILE, [userId]),
-      pool.query(Q.ALL_HABIT_COMPLETIONS, [userId, date, date]),
       pool.query(Q.USER_HABITS_WITH_NAMES, [userId]),
     ]);
 
+    const pillarHabits = buildPillarHabits(userHabitsRows);
     const completedHabitIds = new Set(habitRows.map(r => r.habit_id));
     const hasMeasurement = measurementRows.length > 0;
 
@@ -254,14 +260,18 @@ app.get('/api/user/:userId/debug', async (req, res) => {
       },
     };
 
-    // Habit-based pillars
-    for (const [pillar, habitIds] of Object.entries(PILLAR_HABITS)) {
+    // Build habit name lookup from DB data
+    const habitNameMap = {};
+    for (const h of userHabitsRows) habitNameMap[h.habit_id] = h.habit_name;
+
+    // Habit-based pillars (dynamic per user)
+    for (const [pillar, habitIds] of Object.entries(pillarHabits)) {
       const habits = habitIds.map((id, idx) => {
         const weight = Math.pow(0.5, idx);
         const completed = completedHabitIds.has(id);
         return {
           id,
-          name: HABIT_NAMES[id] || `Habit #${id}`,
+          name: habitNameMap[id] || `Habit #${id}`,
           weight,
           completed,
           contribution: completed ? weight : 0,
@@ -305,6 +315,28 @@ app.get('/api/user/:userId/debug', async (req, res) => {
       };
     }
 
+    // Ensure all standard habit pillars appear in debug (even with 0 habits)
+    for (const pillar of ['spanek', 'strava', 'stres', 'vztahy']) {
+      if (!pillarsDebug[pillar]) {
+        pillarsDebug[pillar] = {
+          label: pillar.charAt(0).toUpperCase() + pillar.slice(1),
+          value: 0,
+          percent: 0,
+          maxMin: PILLAR_MAX_MIN[pillar] || 30,
+          hours: 0,
+          hoursWithHrv: 0,
+          source: 'habits',
+          hrvMult: todayHrvMult,
+          hrvState: todayHrvState,
+          hrvLabel: HRV_LABELS[todayHrvState],
+          hrvNote: `Dnešní HRV (${date}) → včerejší návyky`,
+          habits: [],
+          calculation: { weightedSum: 0, maxPossible: 0, normalized: 0 },
+          rule: { description: 'Žádné návyky v této kategorii', weights: '—', baseMinPerHabit: 0, example: '—' },
+        };
+      }
+    }
+
     // Monitoring - dnešní HRV → dnešní měření
     const monitoringVal = hasMeasurement ? 1.0 : 0;
     const monitoringHrsBase = (PILLAR_MAX_MIN.monitoring * monitoringVal * ageCoef) / 60;
@@ -337,14 +369,13 @@ app.get('/api/user/:userId/debug', async (req, res) => {
     const habitsHrs = ['spanek', 'strava', 'stres', 'vztahy', 'monitoring'].reduce((s, k) => s + (pillarsDebug[k]?.hoursWithHrv || 0), 0);
 
     // All user's habits with completion status (dynamic from DB)
-    const allCompletedIds = new Set(allHabitCompletions.map(r => r.habit_id));
     const allHabits = userHabitsRows.map(h => ({
       id: h.habit_id,
       name: h.habit_name,
       color: h.color,
       categoryId: h.category_id,
       category: h.category_name,
-      completed: allCompletedIds.has(h.habit_id),
+      completed: completedHabitIds.has(h.habit_id),
     }));
 
     res.json({
