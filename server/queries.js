@@ -39,9 +39,16 @@ export const HABIT_WEEKLY_GOALS = `
 // Activity plan items in date range
 export const ACTIVITY_PLAN_ITEMS = `
   SELECT
+    api.id,
     api.completed,
+    api.energyOutput,
+    api.recommendedIntensity,
+    api.recommendedMinutesDuration,
+    api.recommendedStepsCount,
+    adt.description as activityName,
     DATE_FORMAT(api.date, '%Y-%m-%d') as day
   FROM app_users_physical_activity_plan_items api
   JOIN app_users_physical_activity_plans ap ON ap.id = api.planId
+  LEFT JOIN app_users_activity_detailed_type adt ON adt.id = api.typeId
   WHERE ap.usersId = ? AND DATE(api.date) BETWEEN ? AND ?
 `;

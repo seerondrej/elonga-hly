@@ -170,10 +170,26 @@ app.get('/api/user/:userId/debug', async (req, res) => {
     const hasMeasurement = measurementRows.length > 0;
 
     // Activity breakdown
-    const activityItems = activityRows.map(r => ({
-      name: r.name || `Activity ${r.id}`,
-      completed: !!r.completed,
-    }));
+    const INTENSITY_LABELS = { light: 'Lehká', moderate: 'Střední', high: 'Vysoká' };
+    const activityItems = activityRows.map(r => {
+      let name = r.activityName;
+      if (!name) {
+        // Build descriptive name from available fields
+        const parts = [];
+        if (r.recommendedIntensity) parts.push(INTENSITY_LABELS[r.recommendedIntensity] || r.recommendedIntensity);
+        if (r.recommendedMinutesDuration) parts.push(`${r.recommendedMinutesDuration} min`);
+        if (r.recommendedStepsCount) parts.push(`${r.recommendedStepsCount} kroků`);
+        name = parts.length > 0 ? parts.join(', ') : `Aktivita #${r.id}`;
+      }
+      return {
+        name,
+        completed: !!r.completed,
+        energy: r.energyOutput,
+        intensity: r.recommendedIntensity,
+        duration: r.recommendedMinutesDuration,
+        steps: r.recommendedStepsCount,
+      };
+    });
     const activityCompleted = activityItems.filter(a => a.completed).length;
     const activityTotal = activityItems.length;
 
@@ -316,8 +332,22 @@ app.get('/api/user/:userId/debug', async (req, res) => {
     const pohybHrs = pillarsDebug.pohyb?.hoursWithHrv || 0;
     const habitsHrs = ['spanek', 'strava', 'stres', 'vztahy', 'monitoring'].reduce((s, k) => s + (pillarsDebug[k]?.hoursWithHrv || 0), 0);
 
+    // All completed habits for the day (across all pillars)
+    const allHabits = [];
+    for (const [pillar, habitIds] of Object.entries(PILLAR_HABITS)) {
+      for (const id of habitIds) {
+        allHabits.push({
+          id,
+          name: HABIT_NAMES[id] || `Habit #${id}`,
+          pillar,
+          completed: completedHabitIds.has(id),
+        });
+      }
+    }
+
     res.json({
       date,
+      allHabits,
       user: {
         age,
         funcAge,

@@ -807,25 +807,30 @@ function TheGap({ data, todayData, hrvState, age, onAgeChange, funcAge, onFuncAg
   const effectiveAge = funcAge != null ? funcAge : age;
   // Compute age coefficient locally for slider changes (uses effective age)
   const currentAgeCoef = calcAgeCoef(effectiveAge);
+
+  // Age penalty: if funcAge > age, baseline drops below 65 (warning for unhealthy users)
+  const agePenalty = funcAge != null && funcAge > age ? funcAge - age : 0;
+  const baseline = 65 - agePenalty;
+
   // Today's hours — always from todayData, not period-dependent, with age coefficient
   const todayMin=activePillars.reduce((s,p)=>s+p.maxMin*(todayData[p.key]||0),0);
   const todayHrs=(todayMin*HRV_STATES[hrvState].mult*currentAgeCoef)/60;
   // Projection uses todayData so it never changes with period filter
   const totalMin=activePillars.reduce((s,p)=>s+p.maxMin*(todayData[p.key]||0),0);
   const boosted=totalMin*HRV_STATES[hrvState].mult*currentAgeCoef;const dailyHrs=boosted/60;
-  const yearlyDays=(dailyHrs*365)/24;const remaining=Math.max(65-effectiveAge,0);
-  const bonusYears=remaining>0?(yearlyDays*remaining)/365:0;const projected=65+bonusYears;
+  const yearlyDays=(dailyHrs*365)/24;const remaining=Math.max(baseline-effectiveAge,0);
+  const bonusYears=remaining>0?(yearlyDays*remaining)/365:0;const projected=baseline+bonusYears;
 
   // Potential = ALL pillars (not just active), no HRV boost but with age coef — matches onboarding
   const allPillarsMax=PILLARS.reduce((s,p)=>s+p.maxMin,0)/60*currentAgeCoef;
   const allYearlyDays=(allPillarsMax*365)/24;
   const allBonusYears=remaining>0?(allYearlyDays*remaining)/365:0;
-  const maxProjected=65+allBonusYears;
+  const maxProjected=baseline+allBonusYears;
   const hasInactive=activePillars.filter(p=>p.key!=="monitoring").length<PILLARS.filter(p=>p.key!=="monitoring").length;
 
   const scaleMax=Math.max(82,Math.ceil(maxProjected)+2);
   const toPct=yr=>Math.min(Math.max(((yr-effectiveAge)/(scaleMax-effectiveAge))*100,0),100);
-  const basePct=toPct(65);const projPct=toPct(Math.min(projected,scaleMax));
+  const basePct=toPct(baseline);const projPct=toPct(Math.min(projected,scaleMax));
   const maxPct=toPct(Math.min(maxProjected,scaleMax));
   const monthItems=history?history.filter(d=>{const now=new Date();return d.date.getMonth()===now.getMonth()&&d.date.getFullYear()===now.getFullYear();}):[];
   const monthTotalHrs=monthItems.reduce((s,d)=>s+d.hrsBoosted,0);
@@ -886,7 +891,7 @@ function TheGap({ data, todayData, hrvState, age, onAgeChange, funcAge, onFuncAg
           <span style={{fontSize:10,color:T.textTer,fontFamily:T.f,marginLeft:"auto"}}>65.0 let</span>
         </div>
         <div style={{position:"relative",height:26,borderRadius:13,background:T.cardAlt,overflow:"hidden"}}>
-          <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${basePct}%`,borderRadius:13,background:T.borderStrong}}/>
+          <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${toPct(65)}%`,borderRadius:13,background:T.borderStrong}}/>
         </div>
       </div>
 
@@ -1125,19 +1130,46 @@ function DebugPanel({ userId, onClose }) {
                 <div style={{ background: T.cardAlt, borderRadius: T.rSm, padding: 12 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: T.textTer, marginBottom: 8, textTransform: 'uppercase' }}>HRV Boost</div>
 
+                  {/* Readiness thresholds legend */}
+                  <div style={{ marginBottom: 10, padding: '8px 10px', background: T.card, borderRadius: 8, fontSize: 11 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ color: T.red, fontWeight: 700 }}>•</span>
+                        <span style={{ color: T.red, fontWeight: 600, minWidth: 90 }}>Pod průměrem</span>
+                        <span style={{ color: T.textTer }}>&lt;33</span>
+                        <span style={{ color: T.text, fontWeight: 600 }}>×1.0</span>
+                        <span style={{ color: T.textTer, fontSize: 10 }}>Stabilizace</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ color: T.green, fontWeight: 700 }}>•</span>
+                        <span style={{ color: T.green, fontWeight: 600, minWidth: 90 }}>V normě</span>
+                        <span style={{ color: T.textTer }}>33–66</span>
+                        <span style={{ color: T.text, fontWeight: 600 }}>×1.1</span>
+                        <span style={{ color: T.textTer, fontSize: 10 }}>Optimalizace</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ color: T.primary, fontWeight: 700 }}>•</span>
+                        <span style={{ color: T.primary, fontWeight: 600, minWidth: 90 }}>Nadprůměr</span>
+                        <span style={{ color: T.textTer }}>&gt;66</span>
+                        <span style={{ color: T.text, fontWeight: 600 }}>×1.25</span>
+                        <span style={{ color: T.textTer, fontSize: 10 }}>Super-kompenzace</span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Today's HRV - for habits */}
                   <div style={{ marginBottom: 8, padding: '8px 10px', background: T.card, borderRadius: 8 }}>
                     <div style={{ fontSize: 10, color: T.textTer, marginBottom: 4 }}>DNES ({data.hrvInfo.today.date}) → habits + monitoring</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{
                         padding: '3px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
-                        background: data.hrvInfo.today.state === 2 ? T.purpleSoft : data.hrvInfo.today.state === 1 ? T.greenSoft : T.redSoft,
-                        color: data.hrvInfo.today.state === 2 ? T.purple : data.hrvInfo.today.state === 1 ? T.green : T.red,
+                        background: data.hrvInfo.today.state === 2 ? T.primarySoft : data.hrvInfo.today.state === 1 ? T.greenSoft : T.redSoft,
+                        color: data.hrvInfo.today.state === 2 ? T.primary : data.hrvInfo.today.state === 1 ? T.green : T.red,
                       }}>{data.hrvInfo.today.label}</span>
                       <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>×{data.hrvInfo.today.multiplier}</span>
-                      {data.hrvInfo.today.readiness != null && (
-                        <span style={{ fontSize: 10, color: T.textTer }}>readiness: {data.hrvInfo.today.readiness}</span>
-                      )}
+                      <span style={{ fontSize: 11, color: T.textSec }}>
+                        readiness: <strong style={{ color: data.hrvInfo.today.state === 2 ? T.primary : data.hrvInfo.today.state === 1 ? T.green : T.red }}>{data.hrvInfo.today.readiness ?? '—'}</strong>
+                      </span>
                     </div>
                   </div>
 
@@ -1147,13 +1179,13 @@ function DebugPanel({ userId, onClose }) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{
                         padding: '3px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
-                        background: data.hrvInfo.yesterday.state === 2 ? T.purpleSoft : data.hrvInfo.yesterday.state === 1 ? T.greenSoft : T.redSoft,
-                        color: data.hrvInfo.yesterday.state === 2 ? T.purple : data.hrvInfo.yesterday.state === 1 ? T.green : T.red,
+                        background: data.hrvInfo.yesterday.state === 2 ? T.primarySoft : data.hrvInfo.yesterday.state === 1 ? T.greenSoft : T.redSoft,
+                        color: data.hrvInfo.yesterday.state === 2 ? T.primary : data.hrvInfo.yesterday.state === 1 ? T.green : T.red,
                       }}>{data.hrvInfo.yesterday.label}</span>
                       <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>×{data.hrvInfo.yesterday.multiplier}</span>
-                      {data.hrvInfo.yesterday.readiness != null && (
-                        <span style={{ fontSize: 10, color: T.textTer }}>readiness: {data.hrvInfo.yesterday.readiness}</span>
-                      )}
+                      <span style={{ fontSize: 11, color: T.textSec }}>
+                        readiness: <strong style={{ color: data.hrvInfo.yesterday.state === 2 ? T.primary : data.hrvInfo.yesterday.state === 1 ? T.green : T.red }}>{data.hrvInfo.yesterday.readiness ?? '—'}</strong>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1227,11 +1259,25 @@ function DebugPanel({ userId, onClose }) {
                         )}
                         <div style={{ marginBottom: 4 }}>Activity Plan: {p.activity.completed}/{p.activity.total} splněno</div>
                         {p.activity.items.map((a, i) => (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0' }}>
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0' }}>
                             <span style={{ color: a.completed ? T.green : T.red }}>{a.completed ? '✓' : '✗'}</span>
-                            <span>{a.name}</span>
+                            <span style={{ flex: 1 }}>{a.name}</span>
+                            {a.energy > 0 && <span style={{ color: T.textTer, fontSize: 10 }}>{a.energy} kcal</span>}
                           </div>
                         ))}
+                        {/* Habit completions for this day */}
+                        {data.allHabits && data.allHabits.length > 0 && (
+                          <div style={{ marginTop: 8 }}>
+                            <div style={{ marginBottom: 4, fontWeight: 600 }}>Návyky dne:</div>
+                            {data.allHabits.map(h => (
+                              <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0' }}>
+                                <span style={{ color: h.completed ? T.green : T.red }}>{h.completed ? '✓' : '✗'}</span>
+                                <span style={{ flex: 1 }}>{h.name}</span>
+                                <span style={{ color: T.textTer, fontSize: 10 }}>{h.pillar}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         <div style={{ borderTop: `1px solid ${T.border}`, marginTop: 6, paddingTop: 6, color: T.textTer }}>
                           {(p.maxMin/60).toFixed(1)}h × {p.value.toFixed(2)} × Age({data.user.ageCoef}) = {p.hours}h
                         </div>
@@ -1906,16 +1952,19 @@ export default function ElongaHLY() {
     if (onbStep === 3) {
       const effectiveAge = funcAge != null ? funcAge : age;
       const onbAgeCoef = calcAgeCoef(effectiveAge);
-      const remaining = Math.max(65 - effectiveAge, 0);
+      // Age penalty: if funcAge > age, baseline drops below 65
+      const onbAgePenalty = funcAge != null && funcAge > age ? funcAge - age : 0;
+      const onbBaseline = 65 - onbAgePenalty;
+      const remaining = Math.max(onbBaseline - effectiveAge, 0);
       // Active pillars projection (maxHlyDay already includes age coef)
       const potentialYears = remaining > 0 ? ((maxHlyDay * 365 / 24) * remaining) / 365 : 0;
-      const projected = 65 + potentialYears;
+      const projected = onbBaseline + potentialYears;
       // ALL pillars projection (including inactive) with age coef
       const allPillarsMax = PILLARS.reduce((s, p) => s + p.maxMin, 0) / 60 * onbAgeCoef;
       const fullPotentialYears = remaining > 0 ? ((allPillarsMax * 365 / 24) * remaining) / 365 : 0;
-      const fullProjected = 65 + fullPotentialYears;
+      const fullProjected = onbBaseline + fullPotentialYears;
       // Bar percentages
-      const basePct = ((65 - effectiveAge) / (80 - effectiveAge)) * 100;
+      const basePct = ((onbBaseline - effectiveAge) / (80 - effectiveAge)) * 100;
       const projPct = ((projected - effectiveAge) / (80 - effectiveAge)) * 100;
       const fullProjPct = ((fullProjected - effectiveAge) / (80 - effectiveAge)) * 100;
       // Inactive pillars (not enabled, not monitoring)
@@ -1971,7 +2020,7 @@ export default function ElongaHLY() {
                 <span style={{ fontSize: 12, color: T.textSec, fontWeight: 600 }}>65.0 let</span>
               </div>
               <div style={{ height: 28, borderRadius: 14, background: T.border, overflow: "hidden", position: "relative" }}>
-                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${basePct}%`, borderRadius: 14, background: T.borderStrong }} />
+                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${((65 - effectiveAge) / (80 - effectiveAge)) * 100}%`, borderRadius: 14, background: T.borderStrong }} />
               </div>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginBottom: 24,
