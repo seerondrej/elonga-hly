@@ -157,6 +157,8 @@ app.get('/api/user/:userId/debug', async (req, res) => {
       [measurementRows],
       [activityRows],
       [userRows],
+      [allHabitCompletions],
+      [userHabitsRows],
     ] = await Promise.all([
       pool.query(Q.HABIT_COMPLETIONS, [userId, date, date]),
       pool.query(Q.READINESS_VALUES, [userId, date, date]),
@@ -164,6 +166,8 @@ app.get('/api/user/:userId/debug', async (req, res) => {
       pool.query(Q.MEASUREMENT_EXISTS, [userId, date, date]),
       pool.query(Q.ACTIVITY_PLAN_ITEMS, [userId, date, date]),
       pool.query(Q.USER_PROFILE, [userId]),
+      pool.query(Q.ALL_HABIT_COMPLETIONS, [userId, date, date]),
+      pool.query(Q.USER_HABITS_WITH_NAMES, [userId]),
     ]);
 
     const completedHabitIds = new Set(habitRows.map(r => r.habit_id));
@@ -332,18 +336,16 @@ app.get('/api/user/:userId/debug', async (req, res) => {
     const pohybHrs = pillarsDebug.pohyb?.hoursWithHrv || 0;
     const habitsHrs = ['spanek', 'strava', 'stres', 'vztahy', 'monitoring'].reduce((s, k) => s + (pillarsDebug[k]?.hoursWithHrv || 0), 0);
 
-    // All completed habits for the day (across all pillars)
-    const allHabits = [];
-    for (const [pillar, habitIds] of Object.entries(PILLAR_HABITS)) {
-      for (const id of habitIds) {
-        allHabits.push({
-          id,
-          name: HABIT_NAMES[id] || `Habit #${id}`,
-          pillar,
-          completed: completedHabitIds.has(id),
-        });
-      }
-    }
+    // All user's habits with completion status (dynamic from DB)
+    const allCompletedIds = new Set(allHabitCompletions.map(r => r.habit_id));
+    const allHabits = userHabitsRows.map(h => ({
+      id: h.habit_id,
+      name: h.habit_name,
+      color: h.color,
+      categoryId: h.category_id,
+      category: h.category_name,
+      completed: allCompletedIds.has(h.habit_id),
+    }));
 
     res.json({
       date,

@@ -13,6 +13,28 @@ export const HABIT_COMPLETIONS = `
   AND habit_id IN (8, 9, 3, 265, 325, 851, 20)
 `;
 
+// All user's favorite habits with names and categories (for debug display)
+export const USER_HABITS_WITH_NAMES = `
+  SELECT hf.habit_id, hf.color,
+    COALESCE(htcs.habit_name, hten.habit_name, CONCAT('Habit #', hf.habit_id)) as habit_name,
+    h.category_id,
+    hct.name as category_name
+  FROM habit_favorite hf
+  LEFT JOIN habit h ON h.id = hf.habit_id
+  LEFT JOIN habit_translation htcs ON htcs.habit_id = hf.habit_id AND htcs.language = 'cs'
+  LEFT JOIN habit_translation hten ON hten.habit_id = hf.habit_id AND hten.language = 'en'
+  LEFT JOIN habit_category_translation hct ON hct.category_id = h.category_id AND hct.language = 'cs'
+  WHERE hf.user_id = ?
+  ORDER BY h.category_id, hf.created_at
+`;
+
+// All habit completions in date range (no filter on habit_id)
+export const ALL_HABIT_COMPLETIONS = `
+  SELECT habit_id, DATE_FORMAT(date, '%Y-%m-%d') as day
+  FROM user_habit_completion
+  WHERE user_id = ? AND DATE(date) BETWEEN ? AND ?
+`;
+
 // HRV readiness values in date range (JOIN measurement_store + relative_values)
 export const READINESS_VALUES = `
   SELECT DATE_FORMAT(ms.date, '%Y-%m-%d') as day, msrv.myAgeReadiness as readiness, msrv.CA5 as funcAge

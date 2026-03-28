@@ -1265,19 +1265,34 @@ function DebugPanel({ userId, onClose }) {
                             {a.energy > 0 && <span style={{ color: T.textTer, fontSize: 10 }}>{a.energy} kcal</span>}
                           </div>
                         ))}
-                        {/* Habit completions for this day */}
-                        {data.allHabits && data.allHabits.length > 0 && (
-                          <div style={{ marginTop: 8 }}>
-                            <div style={{ marginBottom: 4, fontWeight: 600 }}>Návyky dne:</div>
-                            {data.allHabits.map(h => (
-                              <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0' }}>
-                                <span style={{ color: h.completed ? T.green : T.red }}>{h.completed ? '✓' : '✗'}</span>
-                                <span style={{ flex: 1 }}>{h.name}</span>
-                                <span style={{ color: T.textTer, fontSize: 10 }}>{h.pillar}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        {/* All habit completions for this day */}
+                        {data.allHabits && data.allHabits.length > 0 && (() => {
+                          const hlyHabits = data.allHabits.filter(h => h.categoryId !== 1);
+                          const myHabits = data.allHabits.filter(h => h.categoryId === 1);
+                          return (
+                            <div style={{ marginTop: 8 }}>
+                              <div style={{ marginBottom: 4, fontWeight: 600 }}>Návyky HLY ({hlyHabits.filter(h => h.completed).length}/{hlyHabits.length}):</div>
+                              {hlyHabits.map(h => (
+                                <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0' }}>
+                                  <span style={{ color: h.completed ? T.green : T.red }}>{h.completed ? '✓' : '✗'}</span>
+                                  <span style={{ flex: 1 }}>{h.name}</span>
+                                  <span style={{ color: T.textTer, fontSize: 10 }}>{h.category}</span>
+                                </div>
+                              ))}
+                              {myHabits.length > 0 && (
+                                <>
+                                  <div style={{ marginTop: 6, marginBottom: 4, fontWeight: 600 }}>Moje návyky ({myHabits.filter(h => h.completed).length}/{myHabits.length}):</div>
+                                  {myHabits.map(h => (
+                                    <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0' }}>
+                                      <span style={{ color: h.completed ? T.green : T.red }}>{h.completed ? '✓' : '✗'}</span>
+                                      <span style={{ flex: 1 }}>{h.name}</span>
+                                    </div>
+                                  ))}
+                                </>
+                              )}
+                            </div>
+                          );
+                        })()}
                         <div style={{ borderTop: `1px solid ${T.border}`, marginTop: 6, paddingTop: 6, color: T.textTer }}>
                           {(p.maxMin/60).toFixed(1)}h × {p.value.toFixed(2)} × Age({data.user.ageCoef}) = {p.hours}h
                         </div>
